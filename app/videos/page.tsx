@@ -90,7 +90,7 @@ export default function VideosPage() {
     }
   };
 
-  const handleDeleteCategory = async (id: number) => {
+  const handleDeleteCategory = async (id: string) => {
     if (!confirm('Are you sure? This will also delete all videos in this category.')) return;
     try {
       await videosAPI.deleteCategory(id);
@@ -175,7 +175,7 @@ export default function VideosPage() {
     }
   };
 
-  const handleDeleteVideo = async (id: number) => {
+  const handleDeleteVideo = async (id: string) => {
     if (!confirm('Are you sure you want to delete this video?')) return;
     try {
       await videosAPI.delete(id);
@@ -186,7 +186,7 @@ export default function VideosPage() {
     }
   };
 
-  const getVideosByCategory = (categoryId: number) => {
+  const getVideosByCategory = (categoryId: string) => {
     return videos.filter((v) => v.categoryId === categoryId);
   };
 

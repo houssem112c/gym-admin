@@ -1,8 +1,13 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
+  "/contacts/[id]/page": "app/contacts/[id]/page.js",
+  "/contacts/page": "app/contacts/page.js",
+  "/courses/page": "app/courses/page.js",
+  "/categories/page": "app/categories/page.js",
+  "/page": "app/page.js",
+  "/bmi/page": "app/bmi/page.js",
+  "/locations/page": "app/locations/page.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/schedules/page": "app/schedules/page.js",
-  "/contacts/page": "app/contacts/page.js",
-  "/contacts/[id]/page": "app/contacts/[id]/page.js",
-  "/locations/page": "app/locations/page.js",
-  "/bmi/page": "app/bmi/page.js"
+  "/videos/page": "app/videos/page.js"
 }
