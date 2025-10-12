@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
-import { coursesAPI } from '@/lib/api';
+import { coursesAPI, categoriesAPI } from '@/lib/api';
 import { Course } from '@/types';
 
 export default function CoursesPage() {
@@ -10,13 +10,24 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     duration: '',
     capacity: '',
     instructor: '',
+    categoryId: '',
+    videoUrl: '',
+    thumbnail: '',
   });
+
+  // File upload state
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchCourses = async () => {
     try {
@@ -30,8 +41,18 @@ export default function CoursesPage() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const data = await categoriesAPI.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchCategories();
   }, []);
 
   const handleOpenModal = (course?: Course) => {
@@ -43,6 +64,9 @@ export default function CoursesPage() {
         duration: course.duration.toString(),
         capacity: course.capacity.toString(),
         instructor: course.instructor,
+        categoryId: (course as any).categoryId || '',
+        videoUrl: (course as any).videoUrl || '',
+        thumbnail: (course as any).thumbnail || '',
       });
     } else {
       setEditingCourse(null);
@@ -52,38 +76,87 @@ export default function CoursesPage() {
         duration: '',
         capacity: '',
         instructor: '',
+        categoryId: '',
+        videoUrl: '',
+        thumbnail: '',
       });
     }
+    // Reset file states
+    setVideoFile(null);
+    setThumbnailFile(null);
+    setVideoPreview(null);
+    setThumbnailPreview(null);
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingCourse(null);
+    setVideoFile(null);
+    setThumbnailFile(null);
+    setVideoPreview(null);
+    setThumbnailPreview(null);
+  };
+
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVideoFile(file);
+      const url = URL.createObjectURL(file);
+      setVideoPreview(url);
+      setFormData({ ...formData, videoUrl: '' }); // Clear URL if file is selected
+    }
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const url = URL.createObjectURL(file);
+      setThumbnailPreview(url);
+      setFormData({ ...formData, thumbnail: '' }); // Clear URL if file is selected
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const data = {
-      title: formData.title,
-      description: formData.description,
-      duration: parseInt(formData.duration),
-      capacity: parseInt(formData.capacity),
-      instructor: formData.instructor,
-    };
+    setUploading(true);
 
     try {
-      if (editingCourse) {
-        await coursesAPI.update(editingCourse.id, data);
-      } else {
-        await coursesAPI.create(data);
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('duration', formData.duration);
+      formDataToSend.append('capacity', formData.capacity);
+      formDataToSend.append('instructor', formData.instructor);
+      formDataToSend.append('categoryId', formData.categoryId);
+
+      // Add files if selected, otherwise add URLs
+      if (videoFile) {
+        formDataToSend.append('video', videoFile);
+      } else if (formData.videoUrl) {
+        formDataToSend.append('videoUrl', formData.videoUrl);
       }
+
+      if (thumbnailFile) {
+        formDataToSend.append('thumbnail', thumbnailFile);
+      } else if (formData.thumbnail) {
+        formDataToSend.append('thumbnailUrl', formData.thumbnail);
+      }
+
+      if (editingCourse) {
+        await coursesAPI.updateWithFiles(editingCourse.id, formDataToSend);
+      } else {
+        await coursesAPI.createWithFiles(formDataToSend);
+      }
+
       await fetchCourses();
       handleCloseModal();
     } catch (error: any) {
       console.error('Failed to save course:', error);
       alert(error.message || 'Failed to save course');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -193,8 +266,8 @@ export default function CoursesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-2xl w-full p-8 border border-gray-700 shadow-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 border border-gray-700 shadow-2xl my-8">
             <h2 className="text-3xl font-bold text-white mb-8 text-center">
               {editingCourse ? '✏️ Edit Course' : '➕ Add New Course'}
             </h2>
@@ -274,17 +347,113 @@ export default function CoursesPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-bold text-gray-300 mb-3">
+                  🏷️ Category *
+                </label>
+                <select
+                  required
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                >
+                  <option value="">Select a category...</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Video Upload */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-3">
+                    🎥 Course Video
+                  </label>
+                  <div className="space-y-3">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoFileChange}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-600 file:text-white hover:file:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                    />
+                    <div className="text-xs text-gray-400">Or enter URL:</div>
+                    <input
+                      type="url"
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                      disabled={!!videoFile}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50"
+                      placeholder="https://example.com/video.mp4"
+                    />
+                  </div>
+                  {videoPreview && (
+                    <div className="mt-3">
+                      <video 
+                        src={videoPreview} 
+                        controls 
+                        className="w-full h-32 object-cover rounded-lg border border-gray-600"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnail Upload */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-3">
+                    🖼️ Course Thumbnail
+                  </label>
+                  <div className="space-y-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleThumbnailFileChange}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-600 file:text-white hover:file:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                    />
+                    <div className="text-xs text-gray-400">Or enter URL:</div>
+                    <input
+                      type="url"
+                      value={formData.thumbnail}
+                      onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                      disabled={!!thumbnailFile}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50"
+                      placeholder="https://example.com/thumbnail.jpg"
+                    />
+                  </div>
+                  {thumbnailPreview && (
+                    <div className="mt-3">
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Thumbnail preview" 
+                        className="w-full h-32 object-cover rounded-lg border border-gray-600"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex gap-4 pt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl font-bold hover:from-primary-600 hover:to-primary-700 transition-all transform hover:scale-105 shadow-lg shadow-primary-500/25"
+                  disabled={uploading}
+                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl font-bold hover:from-primary-600 hover:to-primary-700 transition-all transform hover:scale-105 shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {editingCourse ? '✅ Update Course' : '🚀 Create Course'}
+                  {uploading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Uploading...
+                    </div>
+                  ) : (
+                    editingCourse ? '✅ Update Course' : '🚀 Create Course'
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-4 rounded-xl font-bold hover:from-gray-500 hover:to-gray-600 transition-all transform hover:scale-105 shadow-lg"
+                  disabled={uploading}
+                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-4 rounded-xl font-bold hover:from-gray-500 hover:to-gray-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   ❌ Cancel
                 </button>

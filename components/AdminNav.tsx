@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeToken } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { href: '/categories', label: 'Categories', icon: '🏷️' },
   { href: '/courses', label: 'Courses', icon: '🏋️' },
   { href: '/schedules', label: 'Schedules', icon: '📅' },
   { href: '/videos', label: 'Videos', icon: '🎥' },
@@ -27,8 +29,22 @@ export default function AdminNav() {
     <nav className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white w-72 min-h-screen p-6 shadow-2xl border-r border-gray-700/50">
       <div className="mb-10">
         <div className="text-center mb-6">
+          {/* Logo */}
+          <div className="mb-4">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden shadow-lg">
+              <Image
+                src="/logo.jpg"
+                alt="Urban Gym Logo"
+                width={64}
+                height={64}
+                className="w-full h-full object-contain"
+                priority
+              />
+            </div>
+          </div>
+          
           <h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-400 to-primary-500 bg-clip-text text-transparent mb-2">
-            GYM ADMIN
+            URBAN GYM 
           </h1>
           <p className="text-gray-400 text-sm font-medium">Management System</p>
           <div className="w-16 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 mx-auto mt-3"></div>

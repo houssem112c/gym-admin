@@ -38,7 +38,7 @@ export default function SchedulesPage() {
       const allSchedules: CourseSchedule[] = [];
       for (const course of coursesData) {
         const courseSchedules = await coursesAPI.getSchedules(course.id);
-        allSchedules.push(...courseSchedules.map((s: any) => ({ ...s, course })));
+        allSchedules.push(...courseSchedules);
       }
       setSchedules(allSchedules);
     } catch (error) {
@@ -80,7 +80,10 @@ export default function SchedulesPage() {
     if (!date) return [];
     
     const dayOfWeek = date.getDay();
-    const dateStr = date.toISOString().split('T')[0];
+    // Create date string using local date components (not UTC) to match the selected calendar date
+    const dateStr = date.getFullYear() + '-' + 
+      String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(date.getDate()).padStart(2, '0');
     
     return schedules.filter(schedule => {
       // Check if it's a recurring session on this day of week
@@ -90,7 +93,11 @@ export default function SchedulesPage() {
       
       // Check if it's a specific date session
       if (schedule.specificDate) {
-        const specificDateStr = new Date(schedule.specificDate).toISOString().split('T')[0];
+        const specificDate = new Date(schedule.specificDate);
+        // Extract just the date part in UTC to avoid timezone issues
+        const specificDateStr = specificDate.getUTCFullYear() + '-' + 
+          String(specificDate.getUTCMonth() + 1).padStart(2, '0') + '-' + 
+          String(specificDate.getUTCDate()).padStart(2, '0');
         return specificDateStr === dateStr;
       }
       
@@ -155,7 +162,9 @@ export default function SchedulesPage() {
     if (formData.isRecurring && formData.dayOfWeek) {
       data.dayOfWeek = parseInt(formData.dayOfWeek);
     } else if (selectedDate && !formData.isRecurring) {
-      data.specificDate = selectedDate.toISOString();
+      // Create a date at noon UTC to avoid timezone shifting
+      const utcDate = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 12, 0, 0));
+      data.specificDate = utcDate.toISOString();
     }
 
     try {
@@ -564,16 +573,16 @@ export default function SchedulesPage() {
         </div>
       )}
 
-      {/* Session Detail Modal */}
+      {/* Enhanced Session Detail Modal with Course Content */}
       {showDetailModal && selectedSchedule && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-2xl w-full p-8 border border-gray-700 shadow-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-5xl w-full p-8 border border-gray-700 shadow-2xl my-8 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-8">
-              <div>
+              <div className="flex-1">
                 <h2 className="text-3xl font-bold text-white mb-4">
                   📋 {selectedSchedule.title || (selectedSchedule.course as any)?.title || 'Session Details'}
                 </h2>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
                     ⏰ {selectedSchedule.startTime} - {selectedSchedule.endTime}
                   </span>
@@ -586,7 +595,7 @@ export default function SchedulesPage() {
               </div>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-xl"
+                className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-xl ml-4"
               >
                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -594,38 +603,175 @@ export default function SchedulesPage() {
               </button>
             </div>
 
-            <div className="space-y-6">
-              {selectedSchedule.coachName && (
-                <div className="bg-gray-700/50 p-4 rounded-xl border border-gray-600">
-                  <h3 className="text-sm font-bold text-primary-400 mb-2">👨‍🏫 Coach/Instructor</h3>
-                  <p className="text-white text-lg font-semibold">{selectedSchedule.coachName}</p>
-                </div>
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Session Info */}
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-primary-500/20 to-primary-600/20 p-6 rounded-xl border border-primary-400/30">
+                  <h3 className="text-lg font-bold text-primary-300 mb-4">📅 Session Information</h3>
+                  
+                  {selectedSchedule.coachName && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-bold text-primary-400 mb-2">👨‍🏫 Coach/Instructor</h4>
+                      <p className="text-white text-lg font-semibold">{selectedSchedule.coachName}</p>
+                    </div>
+                  )}
 
-              {(selectedSchedule.course as any)?.description && (
-                <div className="bg-gray-700/50 p-4 rounded-xl border border-gray-600">
-                  <h3 className="text-sm font-bold text-primary-400 mb-2">📝 Course Description</h3>
-                  <p className="text-gray-300">{(selectedSchedule.course as any).description}</p>
-                </div>
-              )}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    {(selectedSchedule.course as any)?.duration && (
+                      <div>
+                        <h4 className="text-sm font-bold text-primary-400 mb-2">⏱️ Duration</h4>
+                        <p className="text-white font-semibold">{(selectedSchedule.course as any).duration} minutes</p>
+                      </div>
+                    )}
 
-              <div className="grid grid-cols-2 gap-4">
-                {(selectedSchedule.course as any)?.duration && (
-                  <div className="bg-gray-700/50 p-4 rounded-xl border border-gray-600">
-                    <h3 className="text-sm font-bold text-primary-400 mb-2">⏱️ Duration</h3>
-                    <p className="text-white font-semibold">{(selectedSchedule.course as any).duration} minutes</p>
+                    {(selectedSchedule.course as any)?.capacity && (
+                      <div>
+                        <h4 className="text-sm font-bold text-primary-400 mb-2">� Capacity</h4>
+                        <p className="text-white font-semibold">{(selectedSchedule.course as any).capacity} people</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedSchedule.specificDate && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-bold text-primary-400 mb-2">📆 Specific Date</h4>
+                      <p className="text-white font-semibold">
+                        {new Date(selectedSchedule.specificDate).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {(selectedSchedule.course as any)?.description && (
+                  <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
+                    <h3 className="text-lg font-bold text-primary-400 mb-4">📝 Course Description</h3>
+                    <p className="text-gray-300 leading-relaxed">{(selectedSchedule.course as any).description}</p>
                   </div>
                 )}
 
-                {(selectedSchedule.course as any)?.capacity && (
-                  <div className="bg-gray-700/50 p-4 rounded-xl border border-gray-600">
-                    <h3 className="text-sm font-bold text-primary-400 mb-2">👥 Capacity</h3>
-                    <p className="text-white font-semibold">{(selectedSchedule.course as any).capacity} people</p>
+                {(selectedSchedule.course as any)?.instructor && (
+                  <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
+                    <h3 className="text-lg font-bold text-primary-400 mb-4">👨‍🏫 Course Instructor</h3>
+                    <p className="text-white font-semibold">{(selectedSchedule.course as any).instructor}</p>
                   </div>
                 )}
               </div>
+
+              {/* Right Column - Course Media & Content */}
+              <div className="space-y-6">
+                {/* Course Thumbnail */}
+                {(selectedSchedule.course as any)?.thumbnail && (selectedSchedule.course as any).thumbnail.trim() !== '' && (
+                  <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
+                    <h3 className="text-lg font-bold text-primary-400 mb-4">🖼️ Course Thumbnail</h3>
+                    <div className="relative rounded-xl overflow-hidden bg-gray-800 border border-gray-600">
+                      <img 
+                        src={
+                          (selectedSchedule.course as any).thumbnail.startsWith('http') 
+                            ? (selectedSchedule.course as any).thumbnail 
+                            : `http://localhost:3001${(selectedSchedule.course as any).thumbnail}`
+                        }
+                        alt="Course thumbnail" 
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="flex items-center justify-center h-48 text-gray-400"><span class="text-4xl">🖼️</span><span class="ml-2">No thumbnail available</span></div>';
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Course Video */}
+                {(selectedSchedule.course as any)?.videoUrl && (selectedSchedule.course as any).videoUrl.trim() !== '' && (
+                  <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
+                    <h3 className="text-lg font-bold text-primary-400 mb-4">🎥 Course Video</h3>
+                    <div className="relative rounded-xl overflow-hidden bg-gray-800 border border-gray-600">
+                      {(selectedSchedule.course as any).videoUrl.includes('youtube.com') || (selectedSchedule.course as any).videoUrl.includes('youtu.be') ? (
+                        <div className="w-full h-64">
+                          <iframe
+                            src={(selectedSchedule.course as any).videoUrl.replace('watch?v=', 'embed/')}
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allowFullScreen
+                            title="Course Video"
+                          />
+                        </div>
+                      ) : (
+                        <video 
+                          controls 
+                          className="w-full h-64 object-cover"
+                          src={
+                            (selectedSchedule.course as any).videoUrl.startsWith('http') 
+                              ? (selectedSchedule.course as any).videoUrl 
+                              : `http://localhost:3001${(selectedSchedule.course as any).videoUrl}`
+                          }
+                          onError={(e) => {
+                            const target = e.target as HTMLVideoElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<div class="flex items-center justify-center h-64 text-gray-400"><span class="text-4xl">🎥</span><span class="ml-2">Video not available</span></div>';
+                            }
+                          }}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Course Category Info */}
+                {(selectedSchedule.course as any)?.category && (
+                  <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
+                    <h3 className="text-lg font-bold text-primary-400 mb-4">🏷️ Course Category</h3>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg"
+                        style={{ 
+                          backgroundColor: (selectedSchedule.course as any).category.color + '20', 
+                          color: (selectedSchedule.course as any).category.color 
+                        }}
+                      >
+                        {(selectedSchedule.course as any).category.icon}
+                      </div>
+                      <div>
+                        <h4 className="text-white font-bold text-lg">{(selectedSchedule.course as any).category.name}</h4>
+                        {(selectedSchedule.course as any).category.description && (
+                          <p className="text-gray-400 text-sm">{(selectedSchedule.course as any).category.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Stats */}
+                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-6 rounded-xl border border-blue-400/30">
+                  <h3 className="text-lg font-bold text-blue-300 mb-4">📊 Quick Stats</h3>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="bg-blue-500/20 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-300">{(selectedSchedule.course as any)?.duration || 0}</div>
+                      <div className="text-sm text-blue-400">Minutes</div>
+                    </div>
+                    <div className="bg-blue-500/20 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-300">{(selectedSchedule.course as any)?.capacity || 0}</div>
+                      <div className="text-sm text-blue-400">Max Students</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-4 mt-8 pt-6 border-t border-gray-700">
               <button
                 onClick={() => {

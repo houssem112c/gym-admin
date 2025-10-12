@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Get token from localStorage
 const getToken = () => {
@@ -71,10 +71,50 @@ export const coursesAPI = {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+  createWithFiles: async (data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_URL}/courses`, {
+      method: 'POST',
+      headers,
+      body: data, // FormData - don't set Content-Type, browser will set it with boundary
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
+  },
   update: (id: string, data: any) => authFetch(`/courses/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
+  updateWithFiles: async (id: string, data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_URL}/courses/${id}`, {
+      method: 'PUT',
+      headers,
+      body: data, // FormData - don't set Content-Type, browser will set it with boundary
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
+  },
   delete: (id: string) => authFetch(`/courses/${id}`, {
     method: 'DELETE',
   }),
@@ -195,6 +235,23 @@ export const locationsAPI = {
     body: JSON.stringify(data),
   }),
   delete: (id: string) => authFetch(`/locations/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Categories API
+export const categoriesAPI = {
+  getAll: () => authFetch('/categories'),
+  getOne: (id: string) => authFetch(`/categories/${id}`),
+  create: (data: any) => authFetch('/categories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: any) => authFetch(`/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id: string) => authFetch(`/categories/${id}`, {
     method: 'DELETE',
   }),
 };
