@@ -90,10 +90,10 @@ export default function VideosPage() {
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
+  const handleDeleteCategory = async (id: string | number) => {
     if (!confirm('Are you sure? This will also delete all videos in this category.')) return;
     try {
-      await videosAPI.deleteCategory(id);
+      await videosAPI.deleteCategory(String(id));
       await fetchData();
     } catch (error: any) {
       console.error('Failed to delete category:', error);
@@ -175,10 +175,10 @@ export default function VideosPage() {
     }
   };
 
-  const handleDeleteVideo = async (id: string) => {
+  const handleDeleteVideo = async (id: string | number) => {
     if (!confirm('Are you sure you want to delete this video?')) return;
     try {
-      await videosAPI.delete(id);
+      await videosAPI.delete(String(id));
       await fetchData();
     } catch (error: any) {
       console.error('Failed to delete video:', error);
@@ -186,8 +186,8 @@ export default function VideosPage() {
     }
   };
 
-  const getVideosByCategory = (categoryId: string) => {
-    return videos.filter((v) => v.categoryId === categoryId);
+  const getVideosByCategory = (categoryId: string | number) => {
+    return videos.filter((v) => String(v.categoryId) === String(categoryId));
   };
 
   return (
