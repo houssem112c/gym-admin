@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
 import { coursesAPI, videosAPI, contactsAPI, bmiAPI } from '@/lib/api';
+import { useBackendHealth } from '@/lib/useBackendHealth';
 
 export default function Dashboard() {
+  const { isHealthy, isChecking, error, lastChecked, checkHealth } = useBackendHealth(true);
   const [stats, setStats] = useState({
     courses: 0,
     videos: 0,
@@ -137,29 +139,43 @@ export default function Dashboard() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
                   <span className="text-gray-300 font-medium">System Status</span>
-                  <span className="text-primary-400 font-bold flex items-center gap-2">
-                    <div className="w-3 h-3 bg-primary-500 rounded-full animate-pulse"></div>
-                    Online
+                  <span className={`font-bold flex items-center gap-2 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    {isChecking ? 'Checking...' : isHealthy ? 'Online' : 'Offline'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
                   <span className="text-gray-300 font-medium">Backend API</span>
-                  <span className="text-primary-400 font-bold flex items-center gap-2">
-                    <div className="w-3 h-3 bg-primary-500 rounded-full animate-pulse"></div>
-                    Connected
+                  <span className={`font-bold flex items-center gap-2 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    {isHealthy ? 'Connected' : 'Disconnected'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
                   <span className="text-gray-300 font-medium">Database</span>
-                  <span className="text-primary-400 font-bold flex items-center gap-2">
-                    <div className="w-3 h-3 bg-primary-500 rounded-full animate-pulse"></div>
-                    Active
+                  <span className={`font-bold flex items-center gap-2 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    {isHealthy ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
-                  <span className="text-gray-300 font-medium">Last Updated</span>
-                  <span className="text-white font-bold">Just now</span>
+                  <span className="text-gray-300 font-medium">Last Checked</span>
+                  <span className="text-white font-bold">
+                    {lastChecked ? new Date(lastChecked).toLocaleTimeString() : 'Never'}
+                  </span>
                 </div>
+                {error && (
+                  <div className="p-4 bg-red-900/30 border border-red-500/50 rounded-xl">
+                    <p className="text-red-400 text-sm font-medium">{error}</p>
+                  </div>
+                )}
+                <button
+                  onClick={checkHealth}
+                  disabled={isChecking}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary-500/25 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isChecking ? 'Checking...' : 'Check Health'}
+                </button>
               </div>
             </div>
           </div>

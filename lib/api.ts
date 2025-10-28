@@ -22,6 +22,28 @@ export const removeToken = () => {
   }
 };
 
+// Health check API (no auth required)
+export const healthAPI = {
+  check: async () => {
+    try {
+      const response = await fetch(`${API_URL}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Health check failed');
+      }
+
+      return response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+};
+
 // Generic fetch with auth
 const authFetch = async (url: string, options: RequestInit = {}) => {
   const token = getToken();

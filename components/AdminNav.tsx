@@ -33,7 +33,7 @@ export default function AdminNav() {
           <div className="mb-4">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden shadow-lg">
               <Image
-                src="/logo.jpg"
+                src="/logo.png"
                 alt="Urban Gym Logo"
                 width={64}
                 height={64}
