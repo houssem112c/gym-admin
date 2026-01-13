@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
+import MuscleBodyDiagram from '@/components/MuscleBodyDiagram';
 import { categoriesAPI } from '@/lib/api';
 
 interface Category {
@@ -10,6 +11,7 @@ interface Category {
   description: string;
   color: string;
   icon: string;
+  muscleGroup?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,12 +26,35 @@ export default function CategoriesPage() {
     description: '',
     color: '#3B82F6',
     icon: '🏋️',
+    muscleGroup: '',
   });
 
   const availableIcons = [
     '🏋️', '💪', '🤸', '🏃', '🚴', '🏊', '🧘', '🥊',
     '⚽', '🏀', '🎾', '🏓', '🏸', '🤾', '🏐', '🏈',
     '⛹️', '🤺', '🏇', '🔥', '💯', '⭐', '🎯', '🏆'
+  ];
+
+  const muscleGroups = [
+    { value: 'upper-chest', label: 'Upper Chest' },
+    { value: 'lower-chest', label: 'Lower Chest' },
+    { value: 'upper-back', label: 'Upper Back (Traps)' },
+    { value: 'mid-back', label: 'Mid Back (Lats)' },
+    { value: 'lower-back', label: 'Lower Back' },
+    { value: 'front-delts', label: 'Front Deltoids' },
+    { value: 'side-delts', label: 'Side Deltoids' },
+    { value: 'rear-delts', label: 'Rear Deltoids' },
+    { value: 'biceps', label: 'Biceps' },
+    { value: 'triceps', label: 'Triceps' },
+    { value: 'forearms', label: 'Forearms' },
+    { value: 'upper-abs', label: 'Upper Abs' },
+    { value: 'lower-abs', label: 'Lower Abs' },
+    { value: 'obliques', label: 'Obliques' },
+    { value: 'glutes', label: 'Glutes' },
+    { value: 'quads', label: 'Quadriceps' },
+    { value: 'hamstrings', label: 'Hamstrings' },
+    { value: 'calves', label: 'Calves' },
+    { value: 'fullbody', label: 'Full Body' },
   ];
 
   const fetchCategories = async () => {
@@ -56,6 +81,7 @@ export default function CategoriesPage() {
         description: category.description,
         color: category.color,
         icon: category.icon,
+        muscleGroup: category.muscleGroup || '',
       });
     } else {
       setEditingCategory(null);
@@ -64,6 +90,7 @@ export default function CategoriesPage() {
         description: '',
         color: '#3B82F6',
         icon: '🏋️',
+        muscleGroup: '',
       });
     }
     setShowModal(true);
@@ -78,10 +105,16 @@ export default function CategoriesPage() {
     e.preventDefault();
     
     try {
+      // Prepare data: convert empty muscleGroup to null or undefined
+      const submitData = {
+        ...formData,
+        muscleGroup: formData.muscleGroup?.trim() || null,
+      };
+      
       if (editingCategory) {
-        await categoriesAPI.update(editingCategory.id, formData);
+        await categoriesAPI.update(editingCategory.id, submitData);
       } else {
-        await categoriesAPI.create(formData);
+        await categoriesAPI.create(submitData);
       }
       await fetchCategories();
       handleCloseModal();
@@ -187,9 +220,9 @@ export default function CategoriesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-2xl w-full p-8 border border-gray-700 shadow-2xl">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 border border-gray-700 shadow-2xl my-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center sticky top-0 bg-gradient-to-br from-gray-800 to-gray-900 py-2 z-10">
               {editingCategory ? '✏️ Edit Category' : '➕ Add New Category'}
             </h2>
             
@@ -222,7 +255,7 @@ export default function CategoriesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-3">
                     🎨 Color
@@ -264,6 +297,33 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
+              {/* Muscle Group Selector */}
+              <div>
+                <label className="block text-sm font-bold text-gray-300 mb-3">
+                  💪 Target Muscle Group
+                </label>
+                <select
+                  value={formData.muscleGroup}
+                  onChange={(e) => setFormData({ ...formData, muscleGroup: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                >
+                  <option value="">Select muscle group...</option>
+                  {muscleGroups.map((group) => (
+                    <option key={group.value} value={group.value}>
+                      {group.label}
+                    </option>
+                  ))}
+                </select>
+                {formData.muscleGroup && (
+                  <div className="mt-4 bg-gray-700/50 rounded-xl p-4 border border-gray-600">
+                    <h4 className="text-sm font-bold text-gray-300 mb-3 text-center">Muscle Target Preview</h4>
+                    <div className="flex justify-center">
+                      <MuscleBodyDiagram selectedMuscle={formData.muscleGroup} highlightColor={formData.color} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Preview */}
               <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
                 <h4 className="text-sm font-bold text-gray-300 mb-3">📱 Preview</h4>
@@ -284,18 +344,16 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-6">
+              <div className="flex flex-col sm:flex-row gap-4 pt-6 sticky bottom-0 bg-gradient-to-br from-gray-800 to-gray-900 pb-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl font-bold hover:from-primary-600 hover:to-primary-700 transition-all transform hover:scale-105 shadow-lg shadow-primary-500/25"
-                >
+                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 md:py-4 rounded-xl font-bold hover:from-primary-600 hover:to-primary-700 transition-all transform hover:scale-105 shadow-lg shadow-primary-500/25">
                   {editingCategory ? '✅ Update Category' : '🚀 Create Category'}
                 </button>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-4 rounded-xl font-bold hover:from-gray-500 hover:to-gray-600 transition-all transform hover:scale-105 shadow-lg"
-                >
+                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 md:py-4 rounded-xl font-bold hover:from-gray-500 hover:to-gray-600 transition-all transform hover:scale-105 shadow-lg">
                   ❌ Cancel
                 </button>
               </div>

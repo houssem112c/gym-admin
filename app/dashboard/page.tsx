@@ -2,14 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
-import { coursesAPI, videosAPI, contactsAPI, bmiAPI } from '@/lib/api';
+import { coursesAPI, contactsAPI, bmiAPI, categoriesAPI } from '@/lib/api';
 import { useBackendHealth } from '@/lib/useBackendHealth';
+import {
+  HiOutlineUserGroup,
+  HiOutlineScale,
+  HiOutlineAcademicCap,
+  HiOutlineMail,
+  HiOutlineShieldCheck,
+  HiOutlineDatabase,
+  HiOutlineTerminal,
+  HiOutlineLightningBolt
+} from 'react-icons/hi';
 
 export default function Dashboard() {
   const { isHealthy, isChecking, error, lastChecked, checkHealth } = useBackendHealth(true);
   const [stats, setStats] = useState({
     courses: 0,
-    videos: 0,
     unreadMessages: 0,
     categories: 0,
     bmiRecords: 0,
@@ -20,17 +29,15 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [courses, videos, contacts, categories, bmiStats] = await Promise.all([
+        const [courses, contacts, categories, bmiStats] = await Promise.all([
           coursesAPI.getAll(),
-          videosAPI.getAll(),
           contactsAPI.getAll(),
-          videosAPI.getCategories(),
+          categoriesAPI.getAll(),
           bmiAPI.getStats().catch(() => ({ success: false, data: { totalRecords: 0, totalUsers: 0 } })),
         ]);
 
         setStats({
           courses: courses.length,
-          videos: videos.length,
           unreadMessages: contacts.filter((c: any) => !c.isRead).length,
           categories: categories.length,
           bmiRecords: bmiStats.success ? bmiStats.data.totalRecords : 0,
@@ -47,138 +54,146 @@ export default function Dashboard() {
   }, []);
 
   const statCards = [
-    { label: 'Total Courses', value: stats.courses, icon: '🏋️', color: 'bg-blue-500' },
-    { label: 'Total Videos', value: stats.videos, icon: '🎥', color: 'bg-purple-500' },
-    { label: 'BMI Records', value: stats.bmiRecords, icon: '📏', color: 'bg-orange-500' },
-    { label: 'BMI Users', value: stats.bmiUsers, icon: '👥', color: 'bg-teal-500' },
-    { label: 'Unread Messages', value: stats.unreadMessages, icon: '✉️', color: 'bg-red-500' },
-    { label: 'Video Categories', value: stats.categories, icon: '📁', color: 'bg-green-500' },
+    { label: 'Active Members', value: stats.bmiUsers, icon: HiOutlineUserGroup, color: 'text-primary-500', bg: 'bg-primary-500/10' },
+    { label: 'Classes Offered', value: stats.courses, icon: HiOutlineAcademicCap, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Total Health Log', value: stats.bmiRecords, icon: HiOutlineScale, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { label: 'New Inquiries', value: stats.unreadMessages, icon: HiOutlineMail, color: 'text-accent-500', bg: 'bg-accent-500/10' },
   ];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="flex min-h-screen">
       <AdminNav />
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
-            <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-white tracking-tight">
-              Dashboard
-            </h1>
-            <p className="text-xl text-gray-300 max-w-2xl">
-              Command center for your 
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600 font-bold"> gym management system</span>
-            </p>
+
+      <main className="flex-1 p-8 overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 animate-fade-in">
+            <div>
+              <h1 className="text-5xl font-black text-white tracking-tighter">
+                DASHBOARD <span className="text-primary-500">.</span>
+              </h1>
+              <p className="text-surface-400 mt-2 font-medium">Welcome back, Administrator. Here's your gym's performance today.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className={`px-4 py-2 rounded-2xl glass-card flex items-center gap-2 border ${isHealthy ? 'border-primary-500/20' : 'border-accent-500/20'}`}>
+                <div className={`w-2 h-2 rounded-full ${isHealthy ? 'bg-primary-500 animate-pulse' : 'bg-accent-500'}`}></div>
+                <span className={`text-xs font-bold uppercase tracking-widest ${isHealthy ? 'text-primary-400' : 'text-accent-400'}`}>
+                  {isChecking ? 'Syncing...' : isHealthy ? 'System Stable' : 'System Alert'}
+                </span>
+              </div>
+            </div>
           </div>
 
           {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-500 mx-auto mb-6"></div>
-              <p className="text-xl text-gray-300 font-medium">Loading system metrics...</p>
+            <div className="flex items-center justify-center py-32">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 bg-primary-500/20 blur-xl animate-pulse"></div>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {statCards.map((card) => (
-                <div
-                  key={card.label}
-                  className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700 hover:border-primary-500 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-primary-500/20"
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <div className={`${card.color} text-white text-4xl p-4 rounded-2xl shadow-lg`}>
-                      {card.icon}
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
+                {statCards.map((card, idx) => {
+                  const Icon = card.icon;
+                  return (
+                    <div
+                      key={card.label}
+                      className="glass-card p-6 group hover:border-primary-500/50 relative overflow-hidden"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary-500/5 rounded-full blur-2xl group-hover:bg-primary-500/10 transition-all"></div>
+                      <div className="flex justify-between items-start mb-6">
+                        <div className={`p-3 rounded-2xl ${card.bg} ${card.color} group-hover:scale-110 transition-transform duration-500`}>
+                          <Icon className="w-6 h-6" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-4xl font-black text-white tracking-tighter">{card.value}</p>
+                        <p className="text-xs font-bold text-surface-500 uppercase tracking-widest">{card.label}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-4xl font-extrabold text-white">{card.value}</p>
+                  );
+                })}
+              </div>
+
+              {/* Main Sections */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+                {/* Secondary Status Section */}
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="glass-card p-8 space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <HiOutlineShieldCheck className="w-6 h-6 text-primary-500" />
+                      <h2 className="text-xl font-bold text-white">Security & Status</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                      {[
+                        { label: 'API Engine', icon: HiOutlineLightningBolt, status: isHealthy ? 'success' : 'danger' },
+                        { label: 'Main Data', icon: HiOutlineDatabase, status: isHealthy ? 'success' : 'danger' },
+                        { label: 'Control Panel', icon: HiOutlineTerminal, status: 'success' },
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center justify-between p-4 bg-surface-950/40 rounded-2xl border border-surface-800/50">
+                          <div className="flex items-center gap-3">
+                            <item.icon className="w-4 h-4 text-surface-500" />
+                            <span className="text-sm font-semibold text-surface-300">{item.label}</span>
+                          </div>
+                          <div className={`w-2 h-2 rounded-full ${item.status === 'success' ? 'bg-primary-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-accent-500'}`}></div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={checkHealth}
+                      disabled={isChecking}
+                      className="premium-button-primary w-full group"
+                    >
+                      {isChecking ? 'Validating...' : 'Validate System'}
+                      {!isChecking && <HiOutlineLightningBolt className="w-4 h-4 group-hover:animate-bounce" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Actions Section */}
+                <div className="lg:col-span-2">
+                  <div className="glass-card p-8 h-full">
+                    <div className="flex justify-between items-center mb-8">
+                      <h2 className="text-2xl font-black text-white tracking-tight">PRECISION CONTROL</h2>
+                      <div className="px-3 py-1 bg-primary-500/10 text-primary-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-primary-500/20">
+                        Quick Access
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { href: '/courses', label: 'Manage Classes', color: 'primary' },
+                        { href: '/users', label: 'User Directory', color: 'blue' },
+                        { href: '/exercises', label: 'Exercise Library', color: 'purple' },
+                        { href: '/bmi', label: 'Health Hub', color: 'orange' },
+                      ].map((action) => (
+                        <a
+                          key={action.href}
+                          href={action.href}
+                          className="group p-5 bg-surface-950/40 border border-surface-800/50 rounded-2xl hover:border-primary-500/50 transition-all flex flex-col justify-between h-32"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="w-10 h-10 bg-surface-900 rounded-xl flex items-center justify-center border border-surface-800 group-hover:bg-primary-500/10 group-hover:border-primary-500/30 transition-all">
+                              <HiOutlineTerminal className="w-5 h-5 text-surface-500 group-hover:text-primary-500" />
+                            </div>
+                            <div className="w-6 h-6 rounded-full border border-surface-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                              <span className="text-xs text-primary-500">→</span>
+                            </div>
+                          </div>
+                          <span className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors uppercase tracking-widest">{action.label}</span>
+                        </a>
+                      ))}
                     </div>
                   </div>
-                  <p className="text-gray-300 font-bold text-lg">{card.label}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            </>
           )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
-              <h2 className="text-2xl font-bold text-white mb-6">🚀 Quick Actions</h2>
-              <div className="space-y-4">
-                <a
-                  href="/courses"
-                  className="block px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary-500/25 text-center font-bold"
-                >
-                  🏋️ Manage Courses
-                </a>
-                <a
-                  href="/schedules"
-                  className="block px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/25 text-center font-bold"
-                >
-                  📅 Manage Schedules
-                </a>
-                <a
-                  href="/videos"
-                  className="block px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-purple-500/25 text-center font-bold"
-                >
-                  🎥 Manage Videos
-                </a>
-                <a
-                  href="/bmi"
-                  className="block px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-orange-500/25 text-center font-bold"
-                >
-                  📏 Manage BMI Records
-                </a>
-                <a
-                  href="/contacts"
-                  className="block px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-red-500/25 text-center font-bold"
-                >
-                  ✉️ View Messages
-                </a>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
-              <h2 className="text-2xl font-bold text-white mb-6">⚡ System Status</h2>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
-                  <span className="text-gray-300 font-medium">System Status</span>
-                  <span className={`font-bold flex items-center gap-2 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
-                    <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                    {isChecking ? 'Checking...' : isHealthy ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
-                  <span className="text-gray-300 font-medium">Backend API</span>
-                  <span className={`font-bold flex items-center gap-2 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
-                    <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                    {isHealthy ? 'Connected' : 'Disconnected'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
-                  <span className="text-gray-300 font-medium">Database</span>
-                  <span className={`font-bold flex items-center gap-2 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
-                    <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                    {isHealthy ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-4 px-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
-                  <span className="text-gray-300 font-medium">Last Checked</span>
-                  <span className="text-white font-bold">
-                    {lastChecked ? new Date(lastChecked).toLocaleTimeString() : 'Never'}
-                  </span>
-                </div>
-                {error && (
-                  <div className="p-4 bg-red-900/30 border border-red-500/50 rounded-xl">
-                    <p className="text-red-400 text-sm font-medium">{error}</p>
-                  </div>
-                )}
-                <button
-                  onClick={checkHealth}
-                  disabled={isChecking}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary-500/25 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isChecking ? 'Checking...' : 'Check Health'}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>

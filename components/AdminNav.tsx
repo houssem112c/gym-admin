@@ -4,16 +4,33 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeToken } from '@/lib/api';
+import {
+  HiOutlineChartBar,
+  HiOutlineUsers,
+  HiOutlineTag,
+  HiOutlineFire,
+  HiOutlineCalendar,
+  HiOutlineAcademicCap,
+  HiOutlineClipboardList,
+  HiOutlinePhotograph,
+  HiOutlineLocationMarker,
+  HiOutlineScale,
+  HiOutlineMail,
+  HiOutlineLogout
+} from 'react-icons/hi';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/categories', label: 'Categories', icon: '🏷️' },
-  { href: '/courses', label: 'Courses', icon: '🏋️' },
-  { href: '/schedules', label: 'Schedules', icon: '📅' },
-  { href: '/videos', label: 'Videos', icon: '🎥' },
-  { href: '/locations', label: 'Locations', icon: '📍' },
-  { href: '/bmi', label: 'BMI Records', icon: '📏' },
-  { href: '/contacts', label: 'Messages', icon: '✉️' },
+  { href: '/dashboard', label: 'Overview', icon: HiOutlineChartBar },
+  { href: '/users', label: 'Members', icon: HiOutlineUsers },
+  { href: '/categories', label: 'Categories', icon: HiOutlineTag },
+  { href: '/courses', label: 'Classes', icon: HiOutlineFire },
+  { href: '/schedules', label: 'Time Table', icon: HiOutlineCalendar },
+  { href: '/exercises', label: 'Exercises', icon: HiOutlineAcademicCap },
+  { href: '/workout-plans', label: 'Programs', icon: HiOutlineClipboardList },
+  { href: '/stories', label: 'Stories', icon: HiOutlinePhotograph },
+  { href: '/locations', label: 'Gyms', icon: HiOutlineLocationMarker },
+  { href: '/bmi', label: 'Health Hub', icon: HiOutlineScale },
+  { href: '/contacts', label: 'Inquiries', icon: HiOutlineMail },
 ];
 
 export default function AdminNav() {
@@ -26,56 +43,66 @@ export default function AdminNav() {
   };
 
   return (
-    <nav className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white w-72 min-h-screen p-6 shadow-2xl border-r border-gray-700/50">
-      <div className="mb-10">
-        <div className="text-center mb-6">
-          {/* Logo */}
-          <div className="mb-4">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden shadow-lg">
+    <nav className="relative h-screen flex flex-col w-72 bg-surface-950 border-r border-surface-900/50 backdrop-blur-3xl overflow-hidden z-50">
+      {/* Decorative Blur */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-primary-500/10 blur-[100px] -z-10 animate-pulse-slow"></div>
+
+      <div className="p-8 pb-4">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-surface-900 flex items-center justify-center p-2 border border-surface-800">
               <Image
                 src="/logo.png"
-                alt="Urban Gym Logo"
-                width={64}
-                height={64}
-                className="w-full h-full object-contain"
-                priority
+                alt="Logo"
+                width={40}
+                height={40}
+                className="object-contain transform group-hover:scale-110 transition-transform duration-500"
               />
             </div>
           </div>
-          
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-400 to-primary-500 bg-clip-text text-transparent mb-2">
-            URBAN GYM 
-          </h1>
-          <p className="text-gray-400 text-sm font-medium">Management System</p>
-          <div className="w-16 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 mx-auto mt-3"></div>
+          <div>
+            <h1 className="text-xl font-black tracking-tighter text-white">
+              URBAN<span className="text-primary-500">GYM</span>
+            </h1>
+            <p className="text-[10px] font-bold text-surface-500 uppercase tracking-widest">Admin Engine</p>
+          </div>
         </div>
       </div>
 
-      <ul className="space-y-3 mb-8">
-        {navItems.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              className={`flex items-center gap-4 px-5 py-4 rounded-xl font-medium transition-all duration-300 ${
-                pathname === item.href
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 transform scale-105'
-                  : 'text-gray-300 hover:bg-gradient-to-r hover:from-gray-800 hover:to-gray-700 hover:text-white hover:shadow-lg hover:transform hover:scale-102'
-              }`}
-            >
-              <span className="text-2xl">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide">
+        <div className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
 
-      <div className="mt-auto pt-8 border-t border-gray-700/50">
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center gap-x-3 px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-300 relative overflow-hidden ${isActive
+                    ? 'bg-primary-500/10 text-primary-400'
+                    : 'text-surface-400 hover:text-surface-100 hover:bg-surface-900/50'
+                  }`}
+              >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-500 rounded-r-full"></div>
+                )}
+                <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-primary-500' : 'text-surface-500 group-hover:text-primary-400'}`} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-surface-900/50">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-4 px-5 py-4 rounded-xl text-gray-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-500 hover:text-white transition-all duration-300 font-medium hover:shadow-lg hover:shadow-red-500/30 hover:transform hover:scale-105"
+          className="w-full flex items-center gap-x-3 px-4 py-3 text-sm font-bold text-accent-500 hover:text-accent-400 hover:bg-accent-500/5 rounded-2xl transition-all duration-300 active:scale-95"
         >
-          <span className="text-2xl">🚪</span>
-          <span>Logout</span>
+          <HiOutlineLogout className="w-5 h-5" />
+          Logout
         </button>
       </div>
     </nav>

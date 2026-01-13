@@ -33,27 +33,6 @@ export interface CourseSchedule {
   updatedAt: string;
 }
 
-export interface VideoCategory {
-  id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Video {
-  id: string;
-  categoryId: string;
-  category?: VideoCategory;
-  title: string;
-  description: string;
-  url: string;
-  thumbnail?: string;
-  duration?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Contact {
   id: string;
   userId?: string;
@@ -125,4 +104,74 @@ export interface BmiStats {
   categoryDistribution: {
     [key: string]: number;
   };
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Story {
+  id: string;
+  categoryId: string;
+  category?: Category;
+  mediaUrl: string;
+  mediaType: 'IMAGE' | 'VIDEO';
+  caption?: string;
+  duration: number;
+  expiresAt?: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StoryGroup {
+  category: Category;
+  stories: Story[];
+}
+
+export type Difficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+
+export interface Exercise {
+  id: string;
+  name: string;
+  description?: string;
+  muscleGroup?: string;
+  equipment?: string;
+  videoUrl?: string;
+  imageUrl?: string;
+  difficulty: Difficulty;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkoutPlan {
+  id: string;
+  title: string;
+  description?: string;
+  goal?: string;
+  durationWeeks?: number;
+  difficulty: Difficulty;
+  imageUrl?: string;
+  isActive: boolean;
+  exercises: WorkoutPlanExercise[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkoutPlanExercise {
+  id: string;
+  workoutPlanId: string;
+  exerciseId: string;
+  exercise: Exercise;
+  order: number;
+  sets?: number;
+  reps?: string;
+  notes?: string;
 }

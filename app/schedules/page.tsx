@@ -18,7 +18,7 @@ export default function SchedulesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<CourseSchedule | null>(null);
   const [editingSchedule, setEditingSchedule] = useState<CourseSchedule | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
+
   const [formData, setFormData] = useState({
     courseId: '',
     title: '',
@@ -62,45 +62,45 @@ export default function SchedulesPage() {
     const startDayOfWeek = firstDay.getDay();
 
     const days: (Date | null)[] = [];
-    
+
     // Add empty cells for days before month starts
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add all days in month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
-    
+
     return days;
   };
 
   const getSessionsForDate = (date: Date): CourseSchedule[] => {
     if (!date) return [];
-    
+
     const dayOfWeek = date.getDay();
     // Create date string using local date components (not UTC) to match the selected calendar date
-    const dateStr = date.getFullYear() + '-' + 
-      String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+    const dateStr = date.getFullYear() + '-' +
+      String(date.getMonth() + 1).padStart(2, '0') + '-' +
       String(date.getDate()).padStart(2, '0');
-    
+
     return schedules.filter(schedule => {
       // Check if it's a recurring session on this day of week
       if (schedule.isRecurring && schedule.dayOfWeek === dayOfWeek) {
         return true;
       }
-      
+
       // Check if it's a specific date session
       if (schedule.specificDate) {
         const specificDate = new Date(schedule.specificDate);
         // Extract just the date part in UTC to avoid timezone issues
-        const specificDateStr = specificDate.getUTCFullYear() + '-' + 
-          String(specificDate.getUTCMonth() + 1).padStart(2, '0') + '-' + 
+        const specificDateStr = specificDate.getUTCFullYear() + '-' +
+          String(specificDate.getUTCMonth() + 1).padStart(2, '0') + '-' +
           String(specificDate.getUTCDate()).padStart(2, '0');
         return specificDateStr === dateStr;
       }
-      
+
       return false;
     });
   };
@@ -233,13 +233,13 @@ export default function SchedulesPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <AdminNav />
-      
+
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-12">
             <div>
               <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-white tracking-tight">Schedules</h1>
-              <p className="text-xl text-gray-300">Manage class 
+              <p className="text-xl text-gray-300">Manage class
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600 font-bold"> sessions</span> and timetable
               </p>
             </div>
@@ -262,9 +262,9 @@ export default function SchedulesPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              
+
               <h2 className="text-3xl font-bold text-white">{monthName}</h2>
-              
+
               <button
                 onClick={nextMonth}
                 className="p-3 hover:bg-gray-700/50 rounded-xl text-white transition-all transform hover:scale-105"
@@ -290,25 +290,23 @@ export default function SchedulesPage() {
                   <div
                     key={index}
                     onClick={() => handleDateClick(date)}
-                    className={`min-h-[100px] p-3 border rounded-xl cursor-pointer transition-all transform hover:scale-105 ${
-                      !date
+                    className={`min-h-[100px] p-3 border rounded-xl cursor-pointer transition-all transform hover:scale-105 ${!date
                         ? 'bg-gray-800/30 border-gray-700'
                         : isSelected(date)
-                        ? 'bg-gradient-to-br from-primary-500/20 to-primary-600/20 border-primary-400 border-2 shadow-lg shadow-primary-500/25'
-                        : isToday(date)
-                        ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400 border-2 shadow-lg shadow-blue-500/25'
-                        : 'bg-gradient-to-br from-gray-700/50 to-gray-800/50 border-gray-600 hover:from-gray-600/50 hover:to-gray-700/50 hover:border-gray-500'
-                    }`}
+                          ? 'bg-gradient-to-br from-primary-500/20 to-primary-600/20 border-primary-400 border-2 shadow-lg shadow-primary-500/25'
+                          : isToday(date)
+                            ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400 border-2 shadow-lg shadow-blue-500/25'
+                            : 'bg-gradient-to-br from-gray-700/50 to-gray-800/50 border-gray-600 hover:from-gray-600/50 hover:to-gray-700/50 hover:border-gray-500'
+                      }`}
                   >
                     {date && (
                       <>
-                        <div className={`text-sm font-bold mb-2 ${
-                          isToday(date) 
-                            ? 'text-blue-400' 
+                        <div className={`text-sm font-bold mb-2 ${isToday(date)
+                            ? 'text-blue-400'
                             : isSelected(date)
-                            ? 'text-primary-400'
-                            : 'text-white'
-                        }`}>
+                              ? 'text-primary-400'
+                              : 'text-white'
+                          }`}>
                           {date.getDate()}
                         </div>
                         <div className="space-y-1">
@@ -341,8 +339,8 @@ export default function SchedulesPage() {
             <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-white">
-                  📅 Sessions for {selectedDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
+                  📅 Sessions for {selectedDate.toLocaleDateString('en-US', {
+                    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
                   })}
                 </h3>
                 <button
@@ -433,7 +431,7 @@ export default function SchedulesPage() {
             <h2 className="text-3xl font-bold text-white mb-8 text-center">
               {editingSchedule ? '✏️ Edit Session' : '➕ Add New Session'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {courses.length === 0 && (
                 <div className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-400/30 rounded-xl p-4 mb-6">
@@ -442,7 +440,7 @@ export default function SchedulesPage() {
                   </p>
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-3">
                   Course *
@@ -608,7 +606,7 @@ export default function SchedulesPage() {
               <div className="space-y-6">
                 <div className="bg-gradient-to-br from-primary-500/20 to-primary-600/20 p-6 rounded-xl border border-primary-400/30">
                   <h3 className="text-lg font-bold text-primary-300 mb-4">📅 Session Information</h3>
-                  
+
                   {selectedSchedule.coachName && (
                     <div className="mb-4">
                       <h4 className="text-sm font-bold text-primary-400 mb-2">👨‍🏫 Coach/Instructor</h4>
@@ -636,11 +634,11 @@ export default function SchedulesPage() {
                     <div className="mb-4">
                       <h4 className="text-sm font-bold text-primary-400 mb-2">📆 Specific Date</h4>
                       <p className="text-white font-semibold">
-                        {new Date(selectedSchedule.specificDate).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
+                        {new Date(selectedSchedule.specificDate).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
                         })}
                       </p>
                     </div>
@@ -669,13 +667,13 @@ export default function SchedulesPage() {
                   <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
                     <h3 className="text-lg font-bold text-primary-400 mb-4">🖼️ Course Thumbnail</h3>
                     <div className="relative rounded-xl overflow-hidden bg-gray-800 border border-gray-600">
-                      <img 
+                      <img
                         src={
-                          (selectedSchedule.course as any).thumbnail.startsWith('http') 
-                            ? (selectedSchedule.course as any).thumbnail 
+                          (selectedSchedule.course as any).thumbnail.startsWith('http')
+                            ? (selectedSchedule.course as any).thumbnail
                             : `http://localhost:3001${(selectedSchedule.course as any).thumbnail}`
                         }
-                        alt="Course thumbnail" 
+                        alt="Course thumbnail"
                         className="w-full h-48 object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -706,12 +704,12 @@ export default function SchedulesPage() {
                           />
                         </div>
                       ) : (
-                        <video 
-                          controls 
+                        <video
+                          controls
                           className="w-full h-64 object-cover"
                           src={
-                            (selectedSchedule.course as any).videoUrl.startsWith('http') 
-                              ? (selectedSchedule.course as any).videoUrl 
+                            (selectedSchedule.course as any).videoUrl.startsWith('http')
+                              ? (selectedSchedule.course as any).videoUrl
                               : `http://localhost:3001${(selectedSchedule.course as any).videoUrl}`
                           }
                           onError={(e) => {
@@ -735,11 +733,11 @@ export default function SchedulesPage() {
                   <div className="bg-gray-700/50 p-6 rounded-xl border border-gray-600">
                     <h3 className="text-lg font-bold text-primary-400 mb-4">🏷️ Course Category</h3>
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg"
-                        style={{ 
-                          backgroundColor: (selectedSchedule.course as any).category.color + '20', 
-                          color: (selectedSchedule.course as any).category.color 
+                        style={{
+                          backgroundColor: (selectedSchedule.course as any).category.color + '20',
+                          color: (selectedSchedule.course as any).category.color
                         }}
                       >
                         {(selectedSchedule.course as any).category.icon}

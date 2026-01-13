@@ -4,6 +4,17 @@ import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
 import { coursesAPI, categoriesAPI } from '@/lib/api';
 import { Course } from '@/types';
+import {
+  HiOutlinePlus,
+  HiOutlinePencil,
+  HiOutlineTrash,
+  HiOutlineClock,
+  HiOutlineUserGroup,
+  HiOutlineTag,
+  HiOutlineVideoCamera,
+  HiOutlinePhotograph,
+  HiOutlineX
+} from 'react-icons/hi';
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -22,7 +33,6 @@ export default function CoursesPage() {
     thumbnail: '',
   });
 
-  // File upload state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
@@ -35,7 +45,6 @@ export default function CoursesPage() {
       setCourses(data);
     } catch (error) {
       console.error('Failed to fetch courses:', error);
-      alert('Failed to fetch courses');
     } finally {
       setLoading(false);
     }
@@ -81,7 +90,6 @@ export default function CoursesPage() {
         thumbnail: '',
       });
     }
-    // Reset file states
     setVideoFile(null);
     setThumbnailFile(null);
     setVideoPreview(null);
@@ -92,19 +100,14 @@ export default function CoursesPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingCourse(null);
-    setVideoFile(null);
-    setThumbnailFile(null);
-    setVideoPreview(null);
-    setThumbnailPreview(null);
   };
 
   const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setVideoFile(file);
-      const url = URL.createObjectURL(file);
-      setVideoPreview(url);
-      setFormData({ ...formData, videoUrl: '' }); // Clear URL if file is selected
+      setVideoPreview(URL.createObjectURL(file));
+      setFormData({ ...formData, videoUrl: '' });
     }
   };
 
@@ -112,9 +115,8 @@ export default function CoursesPage() {
     const file = e.target.files?.[0];
     if (file) {
       setThumbnailFile(file);
-      const url = URL.createObjectURL(file);
-      setThumbnailPreview(url);
-      setFormData({ ...formData, thumbnail: '' }); // Clear URL if file is selected
+      setThumbnailPreview(URL.createObjectURL(file));
+      setFormData({ ...formData, thumbnail: '' });
     }
   };
 
@@ -131,29 +133,18 @@ export default function CoursesPage() {
       formDataToSend.append('instructor', formData.instructor);
       formDataToSend.append('categoryId', formData.categoryId);
 
-      // Add files if selected, otherwise add URLs
-      if (videoFile) {
-        formDataToSend.append('video', videoFile);
-      } else if (formData.videoUrl) {
-        formDataToSend.append('videoUrl', formData.videoUrl);
-      }
+      if (videoFile) formDataToSend.append('video', videoFile);
+      else if (formData.videoUrl) formDataToSend.append('videoUrl', formData.videoUrl);
 
-      if (thumbnailFile) {
-        formDataToSend.append('thumbnail', thumbnailFile);
-      } else if (formData.thumbnail) {
-        formDataToSend.append('thumbnailUrl', formData.thumbnail);
-      }
+      if (thumbnailFile) formDataToSend.append('thumbnail', thumbnailFile);
+      else if (formData.thumbnail) formDataToSend.append('thumbnailUrl', formData.thumbnail);
 
-      if (editingCourse) {
-        await coursesAPI.updateWithFiles(editingCourse.id, formDataToSend);
-      } else {
-        await coursesAPI.createWithFiles(formDataToSend);
-      }
+      if (editingCourse) await coursesAPI.updateWithFiles(editingCourse.id, formDataToSend);
+      else await coursesAPI.createWithFiles(formDataToSend);
 
       await fetchCourses();
       handleCloseModal();
     } catch (error: any) {
-      console.error('Failed to save course:', error);
       alert(error.message || 'Failed to save course');
     } finally {
       setUploading(false);
@@ -162,101 +153,98 @@ export default function CoursesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this course?')) return;
-
     try {
       await coursesAPI.delete(id);
       await fetchCourses();
     } catch (error: any) {
-      console.error('Failed to delete course:', error);
       alert(error.message || 'Failed to delete course');
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="flex min-h-screen">
       <AdminNav />
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-12">
+      <main className="flex-1 p-8 overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-12 animate-fade-in">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-white tracking-tight">Courses</h1>
-              <p className="text-xl text-gray-300">Manage all 
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600 font-bold"> gym courses</span>
-              </p>
+              <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Courses</h1>
+              <p className="text-surface-400 mt-2 font-medium">Curate premium training programs and classes.</p>
             </div>
-            <button
-              onClick={() => handleOpenModal()}
-              className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl font-bold hover:from-primary-600 hover:to-primary-700 transition-all transform hover:scale-105 shadow-lg shadow-primary-500/25"
-            >
-              ➕ Add Course
+            <button onClick={() => handleOpenModal()} className="premium-button-primary">
+              <HiOutlinePlus className="w-5 h-5" />
+              Build Course
             </button>
           </div>
 
           {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-500 mx-auto mb-6"></div>
-              <p className="text-xl text-gray-300 font-medium">Loading courses...</p>
+            <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
+              <div className="w-12 h-12 border-4 border-surface-800 border-t-primary-500 rounded-full animate-spin mb-4"></div>
+              <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Loading Syllabus...</p>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-              <table className="min-w-full divide-y divide-gray-700">
-                <thead className="bg-gray-800/50">
+            <div className="overflow-x-auto pb-10 animate-slide-up">
+              <table className="premium-table">
+                <thead>
                   <tr>
-                    <th className="px-8 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-8 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Instructor
-                    </th>
-                    <th className="px-8 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Duration
-                    </th>
-                    <th className="px-8 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Capacity
-                    </th>
-                    <th className="px-8 py-4 text-right text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th>Program Title</th>
+                    <th>Mentor / Coach</th>
+                    <th>Metrics</th>
+                    <th>Class Capacity</th>
+                    <th className="text-right pr-10">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-gray-800/30 divide-y divide-gray-700">
+                <tbody>
                   {courses.map((course) => (
-                    <tr key={course.id} className="hover:bg-gray-700/50 transition-all">
-                      <td className="px-8 py-6">
-                        <div className="text-sm font-medium text-white">{course.title}</div>
-                        <div className="text-sm text-gray-400">{course.description}</div>
+                    <tr key={course.id} className="group">
+                      <td>
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-surface-900 border border-surface-800 overflow-hidden relative">
+                            {(course as any).thumbnail ? (
+                              <img src={(course as any).thumbnail} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-surface-600 font-black">?</div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white group-hover:text-primary-400 transition-colors uppercase tracking-tight">{course.title}</div>
+                            <div className="text-[10px] font-bold text-surface-500 truncate max-w-[200px]">{course.description}</div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-300">
+                      <td className="text-sm font-semibold text-surface-300">
                         {course.instructor}
                       </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-300">
-                        {course.duration} min
+                      <td>
+                        <div className="flex items-center gap-2 text-surface-400 text-xs font-bold">
+                          <HiOutlineClock className="w-3.5 h-3.5 text-primary-500" />
+                          {course.duration} MIN
+                        </div>
                       </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-300">
-                        {course.capacity} people
+                      <td>
+                        <div className="flex items-center gap-2 text-surface-400 text-xs font-bold">
+                          <HiOutlineUserGroup className="w-3.5 h-3.5 text-blue-500" />
+                          {course.capacity} TOTAL
+                        </div>
                       </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleOpenModal(course)}
-                          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg shadow-blue-500/25 font-medium"
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(course.id)}
-                          className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all transform hover:scale-105 shadow-lg shadow-red-500/25 font-medium"
-                        >
-                          🗑️ Delete
-                        </button>
+                      <td className="text-right pr-4">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <button onClick={() => handleOpenModal(course)} className="p-2 bg-surface-900 text-white rounded-xl hover:bg-primary-500/20 hover:text-primary-500 transition-all border border-surface-800">
+                            <HiOutlinePencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(course.id)} className="p-2 bg-surface-900 text-white rounded-xl hover:bg-accent-500/20 hover:text-accent-500 transition-all border border-surface-800">
+                            <HiOutlineTrash className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {courses.length === 0 && (
-                <div className="text-center py-20">
-                  <p className="text-gray-400 text-lg">🏋️ No courses found. Add your first course!</p>
+                <div className="text-center py-20 bg-surface-900/10 rounded-3xl border border-dashed border-surface-800">
+                  <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">No programs in curriculum</p>
                 </div>
               )}
             </div>
@@ -264,199 +252,170 @@ export default function CoursesPage() {
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Course Creation Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 border border-gray-700 shadow-2xl my-8">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
-              {editingCourse ? '✏️ Edit Course' : '➕ Add New Course'}
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-3">
-                  📚 Course Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                  placeholder="Enter course title..."
-                />
-              </div>
+        <div className="fixed inset-0 bg-surface-950/90 backdrop-blur-xl flex items-center justify-center z-[100] p-4 animate-fade-in overflow-y-auto">
+          <div className="glass-card w-full max-w-4xl p-10 relative my-8 animate-scale-in">
+            <button onClick={handleCloseModal} className="absolute top-6 right-6 text-surface-500 hover:text-white transition-colors">
+              <HiOutlineX className="w-6 h-6" />
+            </button>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-3">
-                  📝 Description *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none"
-                  placeholder="Describe what this course covers..."
-                />
-              </div>
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
+                {editingCourse ? 'Engineering' : 'Architect'} Program
+              </h2>
+              <p className="text-surface-500 text-sm font-medium">Define the core metrics of your training curriculum.</p>
+            </div>
 
-              <div className="grid grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-3">
-                    ⏱️ Duration (minutes) *
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <HiOutlineTag className="text-primary-500" /> Identifier
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min="1"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                    placeholder="60"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="premium-input text-lg font-bold"
+                    placeholder="Program Title"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-3">
-                    👥 Capacity *
-                  </label>
-                  <input
-                    type="number"
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Program Synthesis</label>
+                  <textarea
                     required
-                    min="1"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                    placeholder="20"
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="premium-input resize-none"
+                    placeholder="Provide a comprehensive breakdown..."
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-3">
-                  👨‍🏫 Instructor *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.instructor}
-                  onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                  placeholder="Enter instructor name..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-3">
-                  🏷️ Category *
-                </label>
-                <select
-                  required
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                >
-                  <option value="">Select a category...</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Video Upload */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-3">
-                    🎥 Course Video
-                  </label>
-                  <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <HiOutlineClock className="text-blue-400" /> Sync Time
+                    </label>
                     <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoFileChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-600 file:text-white hover:file:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                    />
-                    <div className="text-xs text-gray-400">Or enter URL:</div>
-                    <input
-                      type="url"
-                      value={formData.videoUrl}
-                      onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                      disabled={!!videoFile}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50"
-                      placeholder="https://example.com/video.mp4"
+                      type="number"
+                      required
+                      value={formData.duration}
+                      onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      className="premium-input"
+                      placeholder="Min"
                     />
                   </div>
-                  {videoPreview && (
-                    <div className="mt-3">
-                      <video 
-                        src={videoPreview} 
-                        controls 
-                        className="w-full h-32 object-cover rounded-lg border border-gray-600"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <HiOutlineUserGroup className="text-purple-400" /> Capacity
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.capacity}
+                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                      className="premium-input"
+                      placeholder="Total"
+                    />
+                  </div>
                 </div>
 
-                {/* Thumbnail Upload */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-3">
-                    🖼️ Course Thumbnail
-                  </label>
-                  <div className="space-y-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleThumbnailFileChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-600 file:text-white hover:file:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                    />
-                    <div className="text-xs text-gray-400">Or enter URL:</div>
-                    <input
-                      type="url"
-                      value={formData.thumbnail}
-                      onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                      disabled={!!thumbnailFile}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:opacity-50"
-                      placeholder="https://example.com/thumbnail.jpg"
-                    />
-                  </div>
-                  {thumbnailPreview && (
-                    <div className="mt-3">
-                      <img 
-                        src={thumbnailPreview} 
-                        alt="Thumbnail preview" 
-                        className="w-full h-32 object-cover rounded-lg border border-gray-600"
-                      />
-                    </div>
-                  )}
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Classification</label>
+                  <select
+                    required
+                    value={formData.categoryId}
+                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                    className="premium-input appearance-none"
+                  >
+                    <option value="">Select Domain</option>
+                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-6">
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl font-bold hover:from-primary-600 hover:to-primary-700 transition-all transform hover:scale-105 shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {uploading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Uploading...
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Assigned Mentor</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.instructor}
+                    onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                    className="premium-input"
+                    placeholder="Instructor Name"
+                  />
+                </div>
+
+                {/* Asset Management */}
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <HiOutlineVideoCamera className="text-accent-400" /> Digital Twin (Video)
+                    </label>
+                    <div className="flex gap-4">
+                      <input
+                        type="file"
+                        accept="video/*"
+                        id="video-upload"
+                        onChange={handleVideoFileChange}
+                        className="hidden"
+                      />
+                      <label htmlFor="video-upload" className="flex-1 px-4 py-3 bg-surface-900 border border-surface-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold text-surface-400">
+                        {videoFile ? 'Video Linked' : 'Upload Data'}
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.videoUrl}
+                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                        disabled={!!videoFile}
+                        className="flex-[2] premium-input py-3 text-xs"
+                        placeholder="Direct URL Link"
+                      />
                     </div>
-                  ) : (
-                    editingCourse ? '✅ Update Course' : '🚀 Create Course'
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  disabled={uploading}
-                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-4 rounded-xl font-bold hover:from-gray-500 hover:to-gray-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  ❌ Cancel
-                </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <HiOutlinePhotograph className="text-teal-400" /> Interface (Thumbnail)
+                    </label>
+                    <div className="flex gap-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="image-upload"
+                        onChange={handleThumbnailFileChange}
+                        className="hidden"
+                      />
+                      <label htmlFor="image-upload" className="flex-1 px-4 py-3 bg-surface-900 border border-surface-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold text-surface-400">
+                        {thumbnailFile ? 'Asset Linked' : 'Upload Data'}
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.thumbnail}
+                        onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                        disabled={!!thumbnailFile}
+                        className="flex-[2] premium-input py-3 text-xs"
+                        placeholder="Direct URL Link"
+                      />
+                    </div>
+                    {(thumbnailPreview || formData.thumbnail) && (
+                      <div className="w-full h-32 rounded-2xl overflow-hidden border border-surface-800 p-2">
+                        <img src={thumbnailPreview || formData.thumbnail} className="w-full h-full object-cover rounded-xl opacity-60" alt="" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" disabled={uploading} className="premium-button-primary flex-1 h-14 uppercase tracking-widest text-xs">
+                    {uploading ? 'Processing Architecture...' : editingCourse ? 'Modify Blueprint' : 'Authorize Blueprint'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

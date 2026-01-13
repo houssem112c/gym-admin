@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
 
 // Get token from localStorage
 const getToken = () => {
@@ -47,7 +47,7 @@ export const healthAPI = {
 // Generic fetch with auth
 const authFetch = async (url: string, options: RequestInit = {}) => {
   const token = getToken();
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers as Record<string, string>,
@@ -57,10 +57,22 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  console.log(`📡 Sending ${options.method || 'GET'} to: ${API_URL}${url}`);
   const response = await fetch(`${API_URL}${url}`, {
     ...options,
     headers,
   });
+
+  // Handle unauthorized/forbidden responses
+  if (response.status === 401 || response.status === 403) {
+    removeToken();
+    // Remove admin_token cookie as well
+    if (typeof window !== 'undefined') {
+      document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      window.location.href = '/';
+    }
+    throw new Error('Authentication required. Please login again.');
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }));
@@ -77,7 +89,7 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
-  
+
   register: (data: { email: string; password: string; firstName: string; lastName: string }) =>
     authFetch('/auth/register', {
       method: 'POST',
@@ -99,12 +111,22 @@ export const coursesAPI = {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(`${API_URL}/courses`, {
       method: 'POST',
       headers,
       body: data, // FormData - don't set Content-Type, browser will set it with boundary
     });
+
+    // Handle unauthorized/forbidden responses
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
@@ -123,12 +145,22 @@ export const coursesAPI = {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(`${API_URL}/courses/${id}`, {
       method: 'PUT',
       headers,
       body: data, // FormData - don't set Content-Type, browser will set it with boundary
     });
+
+    // Handle unauthorized/forbidden responses
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
@@ -140,14 +172,14 @@ export const coursesAPI = {
   delete: (id: string) => authFetch(`/courses/${id}`, {
     method: 'DELETE',
   }),
-  
+
   // Schedules
   getSchedules: (courseId: string) => authFetch(`/courses/${courseId}/schedules`),
   createSchedule: (courseId: string, data: any) => authFetch(`/courses/${courseId}/schedules`, {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  updateSchedule: (courseId: string, scheduleId: string, data: any) => 
+  updateSchedule: (courseId: string, scheduleId: string, data: any) =>
     authFetch(`/courses/${courseId}/schedules/${scheduleId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -156,71 +188,6 @@ export const coursesAPI = {
     authFetch(`/courses/${courseId}/schedules/${scheduleId}`, {
       method: 'DELETE',
     }),
-};
-
-// Videos API
-export const videosAPI = {
-  // Categories
-  getCategories: () => authFetch('/videos/categories'),
-  getCategory: (id: string) => authFetch(`/videos/categories/${id}`),
-  createCategory: (data: any) => authFetch('/videos/categories', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
-  updateCategory: (id: string, data: any) => authFetch(`/videos/categories/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  }),
-  deleteCategory: (id: string) => authFetch(`/videos/categories/${id}`, {
-    method: 'DELETE',
-  }),
-  
-  // Videos
-  getAll: () => authFetch('/videos'),
-  getOne: (id: string) => authFetch(`/videos/${id}`),
-  create: async (data: FormData) => {
-    const token = getToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_URL}/videos`, {
-      method: 'POST',
-      headers,
-      body: data, // FormData - don't set Content-Type, browser will set it with boundary
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-
-    return response.json();
-  },
-  update: async (id: string, data: FormData) => {
-    const token = getToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_URL}/videos/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: data, // FormData - don't set Content-Type, browser will set it with boundary
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-
-    return response.json();
-  },
-  delete: (id: string) => authFetch(`/videos/${id}`, {
-    method: 'DELETE',
-  }),
 };
 
 // Contacts API
@@ -291,3 +258,246 @@ export const bmiAPI = {
     method: 'DELETE',
   }),
 };
+
+// Stories API
+export const storiesAPI = {
+  getAll: () => authFetch('/stories'),
+  getAllGrouped: () => authFetch('/stories/grouped'),
+  getOne: (id: string) => authFetch(`/stories/${id}`),
+  uploadStory: async (formData: FormData) => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/stories/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+    return response.json();
+  },
+  create: (data: any) => authFetch('/stories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: any) => authFetch(`/stories/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
+  delete: (id: string) => authFetch(`/stories/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Exercises API
+export const exercisesAPI = {
+  getAll: () => authFetch('/exercises'),
+  getOne: (id: string) => authFetch(`/exercises/${id}`),
+  create: (data: any) => authFetch('/exercises', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: any) => authFetch(`/exercises/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
+  createWithFiles: async (data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    console.log(`📡 Sending POST (with files) to: ${API_URL}/exercises`);
+    const response = await fetch(`${API_URL}/exercises`, {
+      method: 'POST',
+      headers,
+      body: data,
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+    return response.json();
+  },
+  updateWithFiles: async (id: string, data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exercises/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: data,
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+    return response.json();
+  },
+  delete: (id: string) => authFetch(`/exercises/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Workout Plans API
+export const workoutPlansAPI = {
+  getAll: () => authFetch('/workout-plans'),
+  getOne: (id: string) => authFetch(`/workout-plans/${id}`),
+  create: (data: any) => authFetch('/workout-plans', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: any) => authFetch(`/workout-plans/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
+  createWithFiles: async (data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/workout-plans`, {
+      method: 'POST',
+      headers,
+      body: data,
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+    return response.json();
+  },
+  updateWithFiles: async (id: string, data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/workout-plans/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: data,
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+    return response.json();
+  },
+  delete: (id: string) => authFetch(`/workout-plans/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// User Progress API (Admin view)
+export const userProgressAPI = {
+  getPhotos: (userId: string) => authFetch(`/user-progress/photos`),
+  getMeasurements: (userId: string) => authFetch(`/user-progress/measurements`),
+  getPRs: (userId: string) => authFetch(`/user-progress/prs`),
+};
+
+// Users API
+export const usersAPI = {
+  getAll: () => authFetch('/admin/users'),
+  getOne: (id: string) => authFetch(`/admin/users/${id}`),
+  create: (data: any) => authFetch('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: any) => authFetch(`/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
+  delete: (id: string) => authFetch(`/admin/users/${id}`, {
+    method: 'DELETE',
+  }),
+  importExcel: async (file: File) => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/admin/users/import`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Import failed' }));
+      throw new Error(error.message || 'Import failed');
+    }
+
+    return response.json();
+  },
+  exportExcel: async () => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/admin/users/export/excel`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+};
+
