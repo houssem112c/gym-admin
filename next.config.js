@@ -1,16 +1,5 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    domains: [
-      'localhost', 
-      'i.ytimg.com', 
-      'img.youtube.com',
-      // Add your OVH backend domain here
-      // Example: 'your-backend-domain.ovh'
-    ],
-  },
-  // Output standalone for easier deployment
+  images: { domains: ['localhost', 'i.ytimg.com', 'img.youtube.com'] },
   output: 'standalone',
-}
-
-module.exports = nextConfig
+};
+module.exports = nextConfig;
