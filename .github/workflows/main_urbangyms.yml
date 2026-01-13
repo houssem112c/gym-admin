@@ -1,10 +1,16 @@
 name: Build and deploy Next.js app to Azure Web App - urbangyms
 
+# Trigger on push to main branch or manual trigger
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+# Required permissions for OIDC login
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   build:
@@ -62,10 +68,11 @@ jobs:
         with:
           name: standalone-zip
 
-      # Login to Azure
+      # Login to Azure using OIDC
       - name: Login to Azure
         uses: azure/login@v2
         with:
+          auth-type: OIDC
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_13E50D7057BA4CA4B1F01C10EFF3F7CC }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_297E7E011ADF475388A81F923A8EF425 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FF8CD2D68E9941C3822CF3BAFF590204 }}
