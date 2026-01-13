@@ -10,26 +10,43 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Checkout repo
       - uses: actions/checkout@v4
 
+      # Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
 
+      # Cache node_modules for faster builds
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # Build Next.js app
       - name: Build Next.js
         run: npm run build
 
+      # Zip standalone output folder
       - name: Zip standalone folder
         run: |
           cd .next/standalone
           zip -r ../../standalone.zip *
           cd ../../
 
-      - name: Upload artifact for deployment
+      # Upload the zip artifact for deploy job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: standalone-zip
@@ -39,11 +56,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # Download the zip artifact
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: standalone-zip
 
+      # Login to Azure
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -51,14 +70,11 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_297E7E011ADF475388A81F923A8EF425 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FF8CD2D68E9941C3822CF3BAFF590204 }}
 
-      - name: Restart App Service
-        uses: azure/webapps-restart@v1
-        with:
-          app-name: 'urbangyms'
-      
+      # Deploy to Azure Web App and restart after deployment
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'urbangyms'
           slot-name: 'Production'
           package: ./standalone.zip
+          restart-app: true
