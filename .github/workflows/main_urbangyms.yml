@@ -82,3 +82,5 @@ jobs:
           app-name: 'urbangyms'
           slot-name: 'Production'
           package: .
+        env:
+          SCM_DO_BUILD_DURING_DEPLOYMENT: false
