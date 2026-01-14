@@ -291,21 +291,21 @@ export default function SchedulesPage() {
                     key={index}
                     onClick={() => handleDateClick(date)}
                     className={`min-h-[100px] p-3 border rounded-xl cursor-pointer transition-all transform hover:scale-105 ${!date
-                        ? 'bg-gray-800/30 border-gray-700'
-                        : isSelected(date)
-                          ? 'bg-gradient-to-br from-primary-500/20 to-primary-600/20 border-primary-400 border-2 shadow-lg shadow-primary-500/25'
-                          : isToday(date)
-                            ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400 border-2 shadow-lg shadow-blue-500/25'
-                            : 'bg-gradient-to-br from-gray-700/50 to-gray-800/50 border-gray-600 hover:from-gray-600/50 hover:to-gray-700/50 hover:border-gray-500'
+                      ? 'bg-gray-800/30 border-gray-700'
+                      : isSelected(date)
+                        ? 'bg-gradient-to-br from-primary-500/20 to-primary-600/20 border-primary-400 border-2 shadow-lg shadow-primary-500/25'
+                        : isToday(date)
+                          ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400 border-2 shadow-lg shadow-blue-500/25'
+                          : 'bg-gradient-to-br from-gray-700/50 to-gray-800/50 border-gray-600 hover:from-gray-600/50 hover:to-gray-700/50 hover:border-gray-500'
                       }`}
                   >
                     {date && (
                       <>
                         <div className={`text-sm font-bold mb-2 ${isToday(date)
-                            ? 'text-blue-400'
-                            : isSelected(date)
-                              ? 'text-primary-400'
-                              : 'text-white'
+                          ? 'text-blue-400'
+                          : isSelected(date)
+                            ? 'text-primary-400'
+                            : 'text-white'
                           }`}>
                           {date.getDate()}
                         </div>
@@ -671,7 +671,7 @@ export default function SchedulesPage() {
                         src={
                           (selectedSchedule.course as any).thumbnail.startsWith('http')
                             ? (selectedSchedule.course as any).thumbnail
-                            : `http://localhost:3001${(selectedSchedule.course as any).thumbnail}`
+                            : `urbangym-amgyh4ghftepesg9.canadacentral-01.azurewebsites.net${(selectedSchedule.course as any).thumbnail}`
                         }
                         alt="Course thumbnail"
                         className="w-full h-48 object-cover"
@@ -710,7 +710,7 @@ export default function SchedulesPage() {
                           src={
                             (selectedSchedule.course as any).videoUrl.startsWith('http')
                               ? (selectedSchedule.course as any).videoUrl
-                              : `http://localhost:3001${(selectedSchedule.course as any).videoUrl}`
+                              : `urbangym-amgyh4ghftepesg9.canadacentral-01.azurewebsites.net${(selectedSchedule.course as any).videoUrl}`
                           }
                           onError={(e) => {
                             const target = e.target as HTMLVideoElement;
