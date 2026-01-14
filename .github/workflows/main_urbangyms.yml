@@ -34,20 +34,15 @@ jobs:
           # Create deployment directory
           mkdir -p deploy
           
-          # Copy standalone server files to deploy root
-          cp -r .next/standalone/* deploy/
+          # Copy ALL standalone files including hidden .next directory
+          cp -r .next/standalone/. deploy/
           
-          # Create .next directory in deploy root
-          mkdir -p deploy/.next
-          
-          # Copy static assets to deploy/.next/static
+          # Add static assets to the existing .next/static directory
+          # The .next directory from standalone already has BUILD_ID and other necessary files
           cp -r .next/static deploy/.next/static
           
-          # Copy public folder to deploy root
+          # Ensure public folder is present (might already be copied from standalone)
           cp -r public deploy/public
-          
-          # Copy package.json for reference
-          cp package.json deploy/
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
