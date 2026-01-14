@@ -34,15 +34,33 @@ jobs:
           # Create deployment directory
           mkdir -p deploy
           
-          # Copy ALL standalone files including hidden .next directory
-          cp -r .next/standalone/. deploy/
+          # Copy standalone files (this includes .next directory)
+          shopt -s dotglob  # Enable copying hidden files/directories
+          cp -r .next/standalone/* deploy/
+          shopt -u dotglob  # Disable dotglob
           
-          # Add static assets to the existing .next/static directory
-          # The .next directory from standalone already has BUILD_ID and other necessary files
+          # Verify .next directory was copied
+          if [ ! -d "deploy/.next" ]; then
+            echo "ERROR: .next directory not found in deploy folder"
+            exit 1
+          fi
+          
+          # Verify BUILD_ID exists
+          if [ ! -f "deploy/.next/BUILD_ID" ]; then
+            echo "ERROR: BUILD_ID not found in deploy/.next"
+            exit 1
+          fi
+          
+          # Add static assets to .next/static
           cp -r .next/static deploy/.next/static
           
-          # Ensure public folder is present (might already be copied from standalone)
+          # Copy public folder
           cp -r public deploy/public
+          
+          # List deploy structure for debugging
+          echo "Deployment package structure:"
+          ls -la deploy/
+          ls -la deploy/.next/
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
