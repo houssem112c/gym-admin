@@ -28,16 +28,32 @@ jobs:
           npm install
           npm run build 
           npm run test --if-present
-          # Copy static assets to standalone
-          mkdir -p .next/standalone/.next
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
+
+      - name: Prepare deployment package
+        run: |
+          # Create deployment directory
+          mkdir -p deploy
+          
+          # Copy standalone server files to deploy root
+          cp -r .next/standalone/* deploy/
+          
+          # Create .next directory in deploy root
+          mkdir -p deploy/.next
+          
+          # Copy static assets to deploy/.next/static
+          cp -r .next/static deploy/.next/static
+          
+          # Copy public folder to deploy root
+          cp -r public deploy/public
+          
+          # Copy package.json for reference
+          cp package.json deploy/
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .next/standalone
+          path: deploy
 
   deploy:
     runs-on: ubuntu-latest
