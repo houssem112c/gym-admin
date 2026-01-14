@@ -81,6 +81,24 @@ jobs:
         with:
           name: node-app
       
+      - name: Verify artifact contents before deployment
+        run: |
+          echo "Verifying downloaded artifact structure..."
+          ls -la
+          
+          if [ ! -d ".next" ]; then
+            echo "ERROR: .next directory not found after artifact download!"
+            exit 1
+          fi
+          
+          if [ ! -f ".next/BUILD_ID" ]; then
+            echo "ERROR: BUILD_ID not found in .next directory after artifact download!"
+            exit 1
+          fi
+          
+          echo "✓ BUILD_ID found: $(cat .next/BUILD_ID)"
+          echo "✓ Artifact structure verified successfully"
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
