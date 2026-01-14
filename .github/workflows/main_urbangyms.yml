@@ -61,6 +61,10 @@ jobs:
           echo "Deployment package structure:"
           ls -la deploy/
           ls -la deploy/.next/
+          
+          # Rename .next to next-build to avoid GitHub Actions artifact exclusion of hidden files
+          mv deploy/.next deploy/next-build
+          echo "Renamed .next to next-build for artifact upload"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -80,6 +84,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+      
+      - name: Restore .next directory name
+        run: |
+          # Rename next-build back to .next
+          mv next-build .next
+          echo "Restored next-build to .next"
       
       - name: Verify artifact contents before deployment
         run: |
