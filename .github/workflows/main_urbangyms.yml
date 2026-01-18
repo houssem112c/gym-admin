@@ -1,7 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy Node.js app to Azure Web App - urbangyms
+name: Build and Deploy to Azure Container Apps
 
 on:
   push:
@@ -9,119 +6,38 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22.x'
-
-      - name: npm install, build, and test
-        run: |
-          npm install
-          npm run build 
-          npm run test --if-present
-
-      - name: Prepare deployment package
-        run: |
-          # Create deployment directory
-          mkdir -p deploy
-          
-          # Copy standalone files (this includes .next directory)
-          shopt -s dotglob  # Enable copying hidden files/directories
-          cp -r .next/standalone/* deploy/
-          shopt -u dotglob  # Disable dotglob
-          
-          # Verify .next directory was copied
-          if [ ! -d "deploy/.next" ]; then
-            echo "ERROR: .next directory not found in deploy folder"
-            exit 1
-          fi
-          
-          # Verify BUILD_ID exists
-          if [ ! -f "deploy/.next/BUILD_ID" ]; then
-            echo "ERROR: BUILD_ID not found in deploy/.next"
-            exit 1
-          fi
-          
-          # Add static assets to .next/static
-          cp -r .next/static deploy/.next/static
-          
-          # Copy public folder
-          cp -r public deploy/public
-          
-          # List deploy structure for debugging
-          echo "Deployment package structure:"
-          ls -la deploy/
-          ls -la deploy/.next/
-          
-          # Rename .next to next-build to avoid GitHub Actions artifact exclusion of hidden files
-          mv deploy/.next deploy/next-build
-          echo "Renamed .next to next-build for artifact upload"
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: deploy
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: node-app
-      
-      - name: Restore .next directory name
-        run: |
-          # Rename next-build back to .next
-          mv next-build .next
-          echo "Restored next-build to .next"
-      
-      - name: Verify artifact contents before deployment
-        run: |
-          echo "Verifying downloaded artifact structure..."
-          ls -la
-          
-          if [ ! -d ".next" ]; then
-            echo "ERROR: .next directory not found after artifact download!"
-            exit 1
-          fi
-          
-          if [ ! -f ".next/BUILD_ID" ]; then
-            echo "ERROR: BUILD_ID not found in .next directory after artifact download!"
-            exit 1
-          fi
-          
-          echo "✓ BUILD_ID found: $(cat .next/BUILD_ID)"
-          echo "✓ Artifact structure verified successfully"
-      
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_13E50D7057BA4CA4B1F01C10EFF3F7CC }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_297E7E011ADF475388A81F923A8EF425 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FF8CD2D68E9941C3822CF3BAFF590204 }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+      - name: Login to Azure Container Registry
+        run: az acr login --name gymacrgymapp1085
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }} --build-arg NEXT_PUBLIC_API_URL="https://gym-api-gymapp1085.fabulousfield-da78cf39.eastus.azurecontainerapps.io" .
+          docker push gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }}
+          docker tag gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }} gymacrgymapp1085.azurecr.io/gym-admin:latest
+          docker push gymacrgymapp1085.azurecr.io/gym-admin:latest
+
+      - name: Deploy to Azure Container App
+        uses: azure/container-apps-deploy-action@v1
         with:
-          app-name: 'urbangyms'
-          slot-name: 'Production'
-          package: .
-        env:
-          SCM_DO_BUILD_DURING_DEPLOYMENT: false
+          imageToDeploy: gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }}
+          resourceGroup: gym-aca-rg-gymapp1085
+          containerAppName: gym-web-gymapp1085
