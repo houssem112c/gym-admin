@@ -10,7 +10,9 @@ import {
     HiOutlineSearch,
     HiOutlineDotsVertical,
     HiOutlineMail,
-    HiOutlinePhone
+    HiOutlinePhone,
+    HiOutlineLockClosed,
+    HiOutlineLockOpen
 } from 'react-icons/hi';
 
 export default function UsersPage() {
@@ -88,6 +90,15 @@ export default function UsersPage() {
             alert(error.message || 'Export failed');
         } finally {
             setExportLoading(false);
+        }
+    };
+
+    const handleToggleStatus = async (id: string, isActive: boolean) => {
+        try {
+            await usersAPI.toggleStatus(id, isActive);
+            fetchUsers();
+        } catch (error: any) {
+            alert(error.message || 'Failed to update user status');
         }
     };
 
@@ -223,9 +234,22 @@ export default function UsersPage() {
                                                 </div>
                                             </td>
                                             <td className="text-right">
-                                                <button className="premium-button-ghost p-2 opacity-0 group-hover:opacity-100">
-                                                    <HiOutlineDotsVertical className="w-5 h-5" />
-                                                </button>
+                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleToggleStatus(user.id, !user.isActive)}
+                                                        className={`p-2 rounded-lg transition-colors ${user.isActive ? 'text-accent-500 hover:bg-accent-500/10' : 'text-primary-500 hover:bg-primary-500/10'}`}
+                                                        title={user.isActive ? 'Restrict Access' : 'Restore Access'}
+                                                    >
+                                                        {user.isActive ? (
+                                                            <HiOutlineLockOpen className="w-5 h-5" />
+                                                        ) : (
+                                                            <HiOutlineLockClosed className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                    <button className="premium-button-ghost p-2">
+                                                        <HiOutlineDotsVertical className="w-5 h-5" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

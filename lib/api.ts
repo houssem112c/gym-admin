@@ -453,6 +453,10 @@ export const usersAPI = {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
+  toggleStatus: (id: string, isActive: boolean) => authFetch(`/admin/users/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive }),
+  }),
   delete: (id: string) => authFetch(`/admin/users/${id}`, {
     method: 'DELETE',
   }),
@@ -499,5 +503,12 @@ export const usersAPI = {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   },
+};
+
+export const feedAPI = {
+  getAll: () => authFetch('/admin/feed'),
+  delete: (id: string) => authFetch(`/admin/feed/${id}`, {
+    method: 'DELETE',
+  }),
 };
 

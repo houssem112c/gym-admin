@@ -16,12 +16,14 @@ import {
   HiOutlineLocationMarker,
   HiOutlineScale,
   HiOutlineMail,
+  HiOutlineChatAlt,
   HiOutlineLogout
 } from 'react-icons/hi';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: HiOutlineChartBar },
   { href: '/users', label: 'Members', icon: HiOutlineUsers },
+  { href: '/community', label: 'Community', icon: HiOutlineChatAlt },
   { href: '/categories', label: 'Categories', icon: HiOutlineTag },
   { href: '/courses', label: 'Classes', icon: HiOutlineFire },
   { href: '/schedules', label: 'Time Table', icon: HiOutlineCalendar },
@@ -81,8 +83,8 @@ export default function AdminNav() {
                 key={item.href}
                 href={item.href}
                 className={`group flex items-center gap-x-3 px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-300 relative overflow-hidden ${isActive
-                    ? 'bg-primary-500/10 text-primary-400'
-                    : 'text-surface-400 hover:text-surface-100 hover:bg-surface-900/50'
+                  ? 'bg-primary-500/10 text-primary-400'
+                  : 'text-surface-400 hover:text-surface-100 hover:bg-surface-900/50'
                   }`}
               >
                 {isActive && (
