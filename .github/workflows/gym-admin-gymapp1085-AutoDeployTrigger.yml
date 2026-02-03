@@ -1,0 +1,47 @@
+name: Trigger auto deployment for gym-admin-gymapp1085
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/gym-admin-gymapp1085-AutoDeployTrigger.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_13E50D7057BA4CA4B1F01C10EFF3F7CC }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_297E7E011ADF475388A81F923A8EF425 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FF8CD2D68E9941C3822CF3BAFF590204 }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: gymacrgymapp1085.azurecr.io
+          registryUsername: ${{ secrets.GYMAPIGYMAPP1085_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.GYMAPIGYMAPP1085_REGISTRY_PASSWORD }}
+          containerAppName: gym-web-gymapp1085
+          resourceGroup: gym-aca-rg-gymapp1085
+          imageToBuild: gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
