@@ -27,9 +27,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.GYMWEBGYMAPP1085_AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.GYMWEBGYMAPP1085_AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.GYMWEBGYMAPP1085_AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.GYMAPIGYMAPP1085_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.GYMAPIGYMAPP1085_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.GYMAPIGYMAPP1085_AZURE_SUBSCRIPTION_ID }}
 
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
@@ -38,8 +38,8 @@ jobs:
           _dockerfilePathKey_: _dockerfilePath_
           _targetLabelKey_: _targetLabel_
           registryUrl: gymacrgymapp1085.azurecr.io
-          registryUsername: ${{ secrets.GYMWEBGYMAPP1085_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.GYMWEBGYMAPP1085_REGISTRY_PASSWORD }}
+          registryUsername: ${{ secrets.GYMAPIGYMAPP1085_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.GYMAPIGYMAPP1085_REGISTRY_PASSWORD }}
           containerAppName: gym-web-gymapp1085
           resourceGroup: gym-aca-rg-gymapp1085
           imageToBuild: gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }}
