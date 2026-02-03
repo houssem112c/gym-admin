@@ -17,32 +17,70 @@ import {
   HiOutlineScale,
   HiOutlineMail,
   HiOutlineChatAlt,
-  HiOutlineLogout
+  HiOutlineLogout,
+  HiOutlineInbox
 } from 'react-icons/hi';
 
 const navItems = [
-  { href: '/dashboard', label: 'Overview', icon: HiOutlineChartBar },
-  { href: '/users', label: 'Members', icon: HiOutlineUsers },
-  { href: '/community', label: 'Community', icon: HiOutlineChatAlt },
-  { href: '/categories', label: 'Categories', icon: HiOutlineTag },
-  { href: '/courses', label: 'Classes', icon: HiOutlineFire },
-  { href: '/schedules', label: 'Time Table', icon: HiOutlineCalendar },
-  { href: '/exercises', label: 'Exercises', icon: HiOutlineAcademicCap },
-  { href: '/workout-plans', label: 'Programs', icon: HiOutlineClipboardList },
-  { href: '/stories', label: 'Stories', icon: HiOutlinePhotograph },
-  { href: '/locations', label: 'Gyms', icon: HiOutlineLocationMarker },
-  { href: '/bmi', label: 'Health Hub', icon: HiOutlineScale },
-  { href: '/contacts', label: 'Inquiries', icon: HiOutlineMail },
+  { href: '/dashboard', label: 'Overview', icon: HiOutlineChartBar, roles: ['ADMIN', 'COACH'] },
+  { href: '/users', label: 'Members', icon: HiOutlineUsers, roles: ['ADMIN'] },
+  { href: '/my-users', label: 'My Users', icon: HiOutlineUsers, roles: ['COACH'] },
+  { href: '/community', label: 'Community', icon: HiOutlineChatAlt, roles: ['ADMIN'] },
+  { href: '/categories', label: 'Categories', icon: HiOutlineTag, roles: ['ADMIN'] },
+  { href: '/courses', label: 'Classes', icon: HiOutlineFire, roles: ['ADMIN'] },
+  { href: '/my-courses', label: 'My Classes', icon: HiOutlineFire, roles: ['COACH'] },
+  { href: '/schedules', label: 'Time Table', icon: HiOutlineCalendar, roles: ['ADMIN', 'COACH'] },
+  { href: '/exercises', label: 'Exercises', icon: HiOutlineAcademicCap, roles: ['ADMIN'] },
+  { href: '/workout-plans', label: 'Programs', icon: HiOutlineClipboardList, roles: ['ADMIN'] },
+  { href: '/stories', label: 'Stories', icon: HiOutlinePhotograph, roles: ['ADMIN'] },
+  { href: '/locations', label: 'Gyms', icon: HiOutlineLocationMarker, roles: ['ADMIN'] },
+  { href: '/bmi', label: 'Health Hub', icon: HiOutlineScale, roles: ['ADMIN'] },
+  { href: '/products', label: 'Shop Center', icon: HiOutlineTag, roles: ['ADMIN'] },
+  { href: '/orders', label: 'Orders', icon: HiOutlineClipboardList, roles: ['ADMIN'] },
+  { href: '/contacts', label: 'Inquiries', icon: HiOutlineMail, roles: ['ADMIN'] },
+  { href: '/private-sessions', label: 'Private Requests', icon: HiOutlineInbox, roles: ['ADMIN', 'COACH'] },
 ];
+
+import { useEffect, useState } from 'react';
 
 export default function AdminNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-admin`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleLogout = () => {
     removeToken();
     router.push('/');
   };
+
+  const filteredItems = navItems.filter(item => {
+    if (!user) return false;
+    return item.roles.includes(user.role);
+  });
 
   return (
     <nav className="relative h-screen flex flex-col w-72 bg-surface-950 border-r border-surface-900/50 backdrop-blur-3xl overflow-hidden z-50">
@@ -67,14 +105,16 @@ export default function AdminNav() {
             <h1 className="text-xl font-black tracking-tighter text-white">
               URBAN<span className="text-primary-500">GYM</span>
             </h1>
-            <p className="text-[10px] font-bold text-surface-500 uppercase tracking-widest">Admin Engine</p>
+            <p className="text-[10px] font-bold text-surface-500 uppercase tracking-widest">
+              {user?.role === 'COACH' ? 'Coach Panel' : 'Admin Engine'}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide">
         <div className="space-y-1">
-          {navItems.map((item) => {
+          {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
 

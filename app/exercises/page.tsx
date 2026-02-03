@@ -60,7 +60,7 @@ export default function ExercisesPage() {
                 name: '',
                 description: '',
                 muscleGroup: '',
-                equipment: '',
+                equipment: '', 
                 difficulty: 'BEGINNER',
                 videoUrl: '',
                 imageUrl: '',

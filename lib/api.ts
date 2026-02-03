@@ -173,6 +173,8 @@ export const coursesAPI = {
     method: 'DELETE',
   }),
 
+  getMyCourses: () => authFetch('/courses/coach/my-courses'),
+
   // Schedules
   getSchedules: (courseId: string) => authFetch(`/courses/${courseId}/schedules`),
   createSchedule: (courseId: string, data: any) => authFetch(`/courses/${courseId}/schedules`, {
@@ -503,6 +505,11 @@ export const usersAPI = {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   },
+  listCoaches: () => authFetch('/admin/users/coaches'),
+  assignCoach: (userId: string, coachId: string) => authFetch(`/admin/users/${userId}/coach`, {
+    method: 'PATCH',
+    body: JSON.stringify({ coachId }),
+  }),
 };
 
 export const feedAPI = {
@@ -512,3 +519,103 @@ export const feedAPI = {
   }),
 };
 
+
+// Products API
+export const productsAPI = {
+  getAll: () => authFetch('/products'),
+  getOne: (id: string) => authFetch(`/products/${id}`),
+  create: (data: any) => authFetch('/products', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: any) => authFetch(`/products/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
+  createWithFiles: async (data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/products`, {
+      method: 'POST',
+      headers,
+      body: data,
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+    return response.json();
+  },
+  updateWithFiles: async (id: string, data: FormData) => {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: data,
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        window.location.href = '/';
+      }
+      throw new Error('Authentication required. Please login again.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Request failed');
+    }
+    return response.json();
+  },
+  delete: (id: string) => authFetch(`/products/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Coach API
+export const coachAPI = {
+  getMyUsers: () => authFetch('/coach/my-users'),
+  getMyCourses: () => authFetch('/courses/coach/my-courses'),
+  getUserProfile: (id: string) => authFetch(`/coach/user/${id}/profile`),
+  getUserPosts: (id: string) => authFetch(`/coach/user/${id}/posts`),
+  getUserBmi: (id: string) => authFetch(`/coach/user/${id}/bmi`),
+};
+
+// Orders API
+export const ordersAPI = {
+  getAll: () => authFetch('/orders/all'), // Admin endpoint
+  getOne: (id: string) => authFetch(`/orders/${id}`),
+  updateStatus: (id: string, status: string) => authFetch(`/orders/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  }),
+};
+
+// Private Sessions API
+export const privateSessionsAPI = {
+  getRequests: () => authFetch('/private-sessions/coach-requests'),
+  getMySessions: () => authFetch('/private-sessions/my-sessions'),
+  respond: (id: string, status: string) => authFetch(`/private-sessions/${id}/respond`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  }),
+};

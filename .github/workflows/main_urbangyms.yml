@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }} --build-arg NEXT_PUBLIC_API_URL="https://gym-api-gymapp1085.blueforest-3220f1c9.westus.azurecontainerapps.io/api" .
+          docker build -t gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }} --build-arg NEXT_PUBLIC_API_URL="htttp://localhost:3001/api" .
           docker push gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }}
           docker tag gymacrgymapp1085.azurecr.io/gym-admin:${{ github.sha }} gymacrgymapp1085.azurecr.io/gym-admin:latest
           docker push gymacrgymapp1085.azurecr.io/gym-admin:latest

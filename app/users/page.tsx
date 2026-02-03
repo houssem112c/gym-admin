@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminNav from '@/components/AdminNav';
 import { usersAPI } from '@/lib/api';
 import {
@@ -16,6 +17,7 @@ import {
 } from 'react-icons/hi';
 
 export default function UsersPage() {
+    const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -23,6 +25,7 @@ export default function UsersPage() {
     const [exportLoading, setExportLoading] = useState(false);
     const [importResult, setImportResult] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [coaches, setCoaches] = useState<any[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [newUser, setNewUser] = useState({
@@ -34,10 +37,14 @@ export default function UsersPage() {
 
     const fetchUsers = async () => {
         try {
-            const data = await usersAPI.getAll();
-            setUsers(data);
+            const [usersData, coachesData] = await Promise.all([
+                usersAPI.getAll(),
+                usersAPI.listCoaches()
+            ]);
+            setUsers(usersData);
+            setCoaches(coachesData);
         } catch (error) {
-            console.error('Failed to fetch users:', error);
+            console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
         }
@@ -99,6 +106,15 @@ export default function UsersPage() {
             fetchUsers();
         } catch (error: any) {
             alert(error.message || 'Failed to update user status');
+        }
+    };
+
+    const handleAssignCoach = async (userId: string, coachId: string) => {
+        try {
+            await usersAPI.assignCoach(userId, coachId);
+            fetchUsers();
+        } catch (error: any) {
+            alert(error.message || 'Failed to assign coach');
         }
     };
 
@@ -193,6 +209,7 @@ export default function UsersPage() {
                                         <th>Name & Profile</th>
                                         <th>Contact Intelligence</th>
                                         <th>Access Level</th>
+                                        <th>Assigned Coach</th>
                                         <th>Activity Status</th>
                                         <th className="text-right pr-10">Actions</th>
                                     </tr>
@@ -221,9 +238,25 @@ export default function UsersPage() {
                                                 </div>
                                             </td>
                                             <td>
-                                                <span className={`status-badge ${user.role === 'ADMIN' ? 'bg-primary-500/10 text-primary-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                                <span className={`status-badge ${user.role === 'ADMIN' ? 'bg-primary-500/10 text-primary-500' : user.role === 'COACH' ? 'bg-orange-500/10 text-orange-500' : 'bg-blue-500/10 text-blue-500'}`}>
                                                     {user.role}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                {user.role === 'USER' ? (
+                                                    <select
+                                                        value={user.coachId || ''}
+                                                        onChange={(e) => handleAssignCoach(user.id, e.target.value)}
+                                                        className="bg-surface-900 border border-surface-800 text-surface-400 text-[10px] font-bold uppercase tracking-widest rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary-500/50 outline-none transition-all w-full max-w-[120px]"
+                                                    >
+                                                        <option value="">No Coach</option>
+                                                        {coaches.map(coach => (
+                                                            <option key={coach.id} value={coach.id}>{coach.name}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <span className="text-surface-600 font-bold text-[10px] uppercase tracking-widest">N/A</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <div className="flex items-center gap-2">
@@ -246,7 +279,11 @@ export default function UsersPage() {
                                                             <HiOutlineLockClosed className="w-5 h-5" />
                                                         )}
                                                     </button>
-                                                    <button className="premium-button-ghost p-2">
+                                                    <button
+                                                        onClick={() => router.push(`/users/${user.id}`)}
+                                                        className="premium-button-ghost p-2"
+                                                        title="View Details"
+                                                    >
                                                         <HiOutlineDotsVertical className="w-5 h-5" />
                                                     </button>
                                                 </div>
@@ -325,6 +362,7 @@ export default function UsersPage() {
                                         className="premium-input appearance-none"
                                     >
                                         <option value="USER">Standard Member</option>
+                                        <option value="COACH">Professional Coach</option>
                                         <option value="ADMIN">System Administrator</option>
                                     </select>
                                 </div>

@@ -15,9 +15,9 @@ az acr login --name $acrName
 # 2. Build & Push
 Write-Host "Step 2: Building Docker Image..." -ForegroundColor Yellow
 # Get the dynamic API URL from the running container app (optional, or hardcode if known)
-$apiUrl = "https://gym-api-gymapp1085.blueforest-3220f1c9.westus.azurecontainerapps.io/api"
+$apiUrl = "htttp://localhost:3001/api"
 
-docker build --no-cache -t "$acrName.azurecr.io/gym-admin:latest" --build-arg NEXT_PUBLIC_API_URL=$apiUrl .
+docker build -t "$acrName.azurecr.io/gym-admin:latest" --build-arg NEXT_PUBLIC_API_URL=$apiUrl .
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "Step 3: Pushing to Registry..." -ForegroundColor Yellow

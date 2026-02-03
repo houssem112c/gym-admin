@@ -29,6 +29,14 @@ export interface CourseSchedule {
   dayOfWeek?: number;
   isRecurring: boolean;
   specificDate?: string;
+  bookings?: {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+    }
+  }[];
   createdAt: string;
   updatedAt: string;
 }

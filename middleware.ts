@@ -7,8 +7,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('admin_token')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '');
+  const token = request.cookies.get('admin_token')?.value ||
+    request.headers.get('authorization')?.replace('Bearer ', '');
 
   if (!token) {
     return NextResponse.redirect(new URL('/', request.url));
@@ -29,8 +29,8 @@ export async function middleware(request: NextRequest) {
     }
 
     const userData = await response.json();
-    
-    if (userData.role !== 'ADMIN') {
+
+    if (userData.role !== 'ADMIN' && userData.role !== 'COACH') {
       const errorResponse = NextResponse.redirect(new URL('/', request.url));
       errorResponse.cookies.delete('admin_token');
       return errorResponse;

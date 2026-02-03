@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
-import { coursesAPI, categoriesAPI } from '@/lib/api';
+import { coursesAPI, categoriesAPI, usersAPI } from '@/lib/api';
 import { Course } from '@/types';
 import {
   HiOutlinePlus,
@@ -13,7 +13,8 @@ import {
   HiOutlineTag,
   HiOutlineVideoCamera,
   HiOutlinePhotograph,
-  HiOutlineX
+  HiOutlineX,
+  HiOutlineUserCircle
 } from 'react-icons/hi';
 
 export default function CoursesPage() {
@@ -22,12 +23,14 @@ export default function CoursesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [coaches, setCoaches] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     duration: '',
     capacity: '',
     instructor: '',
+    instructorId: '',
     categoryId: '',
     videoUrl: '',
     thumbnail: '',
@@ -59,9 +62,19 @@ export default function CoursesPage() {
     }
   };
 
+  const fetchCoaches = async () => {
+    try {
+      const data = await usersAPI.listCoaches();
+      setCoaches(data);
+    } catch (error) {
+      console.error('Failed to fetch coaches:', error);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
     fetchCategories();
+    fetchCoaches();
   }, []);
 
   const handleOpenModal = (course?: Course) => {
@@ -73,6 +86,7 @@ export default function CoursesPage() {
         duration: course.duration.toString(),
         capacity: course.capacity.toString(),
         instructor: course.instructor,
+        instructorId: (course as any).instructorId || '',
         categoryId: (course as any).categoryId || '',
         videoUrl: (course as any).videoUrl || '',
         thumbnail: (course as any).thumbnail || '',
@@ -85,6 +99,7 @@ export default function CoursesPage() {
         duration: '',
         capacity: '',
         instructor: '',
+        instructorId: '',
         categoryId: '',
         videoUrl: '',
         thumbnail: '',
@@ -131,6 +146,7 @@ export default function CoursesPage() {
       formDataToSend.append('duration', formData.duration);
       formDataToSend.append('capacity', formData.capacity);
       formDataToSend.append('instructor', formData.instructor);
+      formDataToSend.append('instructorId', formData.instructorId);
       formDataToSend.append('categoryId', formData.categoryId);
 
       if (videoFile) formDataToSend.append('video', videoFile);
@@ -164,7 +180,7 @@ export default function CoursesPage() {
   return (
     <div className="flex min-h-screen">
       <AdminNav />
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-8 overflow-y-auto border-l border-surface-900/50">
         <div className="max-w-7xl mx-auto space-y-12 animate-fade-in">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -200,7 +216,7 @@ export default function CoursesPage() {
                     <tr key={course.id} className="group">
                       <td>
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-surface-900 border border-surface-800 overflow-hidden relative">
+                          <div className="w-12 h-12 rounded-xl bg-surface-900 border border-surface-800 overflow-hidden relative shadow-inner">
                             {(course as any).thumbnail ? (
                               <img src={(course as any).thumbnail} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
                             ) : (
@@ -214,7 +230,12 @@ export default function CoursesPage() {
                         </div>
                       </td>
                       <td className="text-sm font-semibold text-surface-300">
-                        {course.instructor}
+                        <div className="flex flex-col">
+                          <span>{course.instructor}</span>
+                          {(course as any).instructorUser && (
+                            <span className="text-[10px] text-primary-500/70">Linked: {(course as any).instructorUser.name}</span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <div className="flex items-center gap-2 text-surface-400 text-xs font-bold">
@@ -230,10 +251,10 @@ export default function CoursesPage() {
                       </td>
                       <td className="text-right pr-4">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          <button onClick={() => handleOpenModal(course)} className="p-2 bg-surface-900 text-white rounded-xl hover:bg-primary-500/20 hover:text-primary-500 transition-all border border-surface-800">
+                          <button onClick={() => handleOpenModal(course)} className="p-2 bg-surface-900 text-white rounded-xl hover:bg-primary-500/20 hover:text-primary-500 transition-all border border-surface-800 shadow-xl">
                             <HiOutlinePencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(course.id)} className="p-2 bg-surface-900 text-white rounded-xl hover:bg-accent-500/20 hover:text-accent-500 transition-all border border-surface-800">
+                          <button onClick={() => handleDelete(course.id)} className="p-2 bg-surface-900 text-white rounded-xl hover:bg-accent-500/20 hover:text-accent-500 transition-all border border-surface-800 shadow-xl">
                             <HiOutlineTrash className="w-4 h-4" />
                           </button>
                         </div>
@@ -255,8 +276,8 @@ export default function CoursesPage() {
       {/* Course Creation Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-surface-950/90 backdrop-blur-xl flex items-center justify-center z-[100] p-4 animate-fade-in overflow-y-auto">
-          <div className="glass-card w-full max-w-4xl p-10 relative my-8 animate-scale-in">
-            <button onClick={handleCloseModal} className="absolute top-6 right-6 text-surface-500 hover:text-white transition-colors">
+          <div className="glass-card w-full max-w-4xl p-10 relative my-8 animate-scale-in border border-surface-800/50 shadow-2xl">
+            <button onClick={handleCloseModal} className="absolute top-6 right-6 text-surface-500 hover:text-white transition-colors p-2 hover:bg-surface-900 rounded-full">
               <HiOutlineX className="w-6 h-6" />
             </button>
 
@@ -264,10 +285,10 @@ export default function CoursesPage() {
               <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
                 {editingCourse ? 'Engineering' : 'Architect'} Program
               </h2>
-              <p className="text-surface-500 text-sm font-medium">Define the core metrics of your training curriculum.</p>
+              <p className="text-surface-500 text-sm font-medium italic">"Designing the future of human performance."</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-6">
                 <div>
                   <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -325,7 +346,7 @@ export default function CoursesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Classification</label>
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Classification Domain</label>
                   <select
                     required
                     value={formData.categoryId}
@@ -339,81 +360,101 @@ export default function CoursesPage() {
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Assigned Mentor</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.instructor}
-                    onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
-                    className="premium-input"
-                    placeholder="Instructor Name"
-                  />
+                <div className="p-6 bg-surface-900/50 rounded-3xl border border-surface-800 space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <HiOutlineUserCircle className="text-yellow-400" /> Linked Coach (Internal)
+                    </label>
+                    <select
+                      value={formData.instructorId}
+                      onChange={(e) => {
+                        const selectedCoach = coaches.find(c => c.id === e.target.value);
+                        setFormData({
+                          ...formData,
+                          instructorId: e.target.value,
+                          instructor: selectedCoach ? selectedCoach.name : formData.instructor
+                        });
+                      }}
+                      className="premium-input appearance-none"
+                    >
+                      <option value="">Link to Coach Profile</option>
+                      {coaches.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.email})</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2">Display Instructor Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.instructor}
+                      onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                      className="premium-input"
+                      placeholder="Public Instructor Name"
+                    />
+                  </div>
                 </div>
 
-                {/* Asset Management */}
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                      <HiOutlineVideoCamera className="text-accent-400" /> Digital Twin (Video)
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <HiOutlineVideoCamera className="text-accent-400" /> Digital Twin (Video)
+                  </label>
+                  <div className="flex gap-4">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      id="video-upload"
+                      onChange={handleVideoFileChange}
+                      className="hidden"
+                    />
+                    <label htmlFor="video-upload" className="flex-1 px-4 py-3 bg-surface-900 border border-surface-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold text-surface-400">
+                      {videoFile ? 'Video Linked' : 'Upload Data'}
                     </label>
-                    <div className="flex gap-4">
-                      <input
-                        type="file"
-                        accept="video/*"
-                        id="video-upload"
-                        onChange={handleVideoFileChange}
-                        className="hidden"
-                      />
-                      <label htmlFor="video-upload" className="flex-1 px-4 py-3 bg-surface-900 border border-surface-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold text-surface-400">
-                        {videoFile ? 'Video Linked' : 'Upload Data'}
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.videoUrl}
-                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                        disabled={!!videoFile}
-                        className="flex-[2] premium-input py-3 text-xs"
-                        placeholder="Direct URL Link"
-                      />
-                    </div>
+                    <input
+                      type="url"
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                      disabled={!!videoFile}
+                      className="flex-[2] premium-input py-3 text-xs"
+                      placeholder="Direct URL Link"
+                    />
                   </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                      <HiOutlinePhotograph className="text-teal-400" /> Interface (Thumbnail)
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <HiOutlinePhotograph className="text-teal-400" /> Interface (Thumbnail)
+                  </label>
+                  <div className="flex gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="image-upload"
+                      onChange={handleThumbnailFileChange}
+                      className="hidden"
+                    />
+                    <label htmlFor="image-upload" className="flex-1 px-4 py-3 bg-surface-900 border border-surface-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold text-surface-400">
+                      {thumbnailFile ? 'Asset Linked' : 'Upload Data'}
                     </label>
-                    <div className="flex gap-4">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id="image-upload"
-                        onChange={handleThumbnailFileChange}
-                        className="hidden"
-                      />
-                      <label htmlFor="image-upload" className="flex-1 px-4 py-3 bg-surface-900 border border-surface-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold text-surface-400">
-                        {thumbnailFile ? 'Asset Linked' : 'Upload Data'}
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.thumbnail}
-                        onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                        disabled={!!thumbnailFile}
-                        className="flex-[2] premium-input py-3 text-xs"
-                        placeholder="Direct URL Link"
-                      />
-                    </div>
-                    {(thumbnailPreview || formData.thumbnail) && (
-                      <div className="w-full h-32 rounded-2xl overflow-hidden border border-surface-800 p-2">
-                        <img src={thumbnailPreview || formData.thumbnail} className="w-full h-full object-cover rounded-xl opacity-60" alt="" />
-                      </div>
-                    )}
+                    <input
+                      type="url"
+                      value={formData.thumbnail}
+                      onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                      disabled={!!thumbnailFile}
+                      className="flex-[2] premium-input py-3 text-xs"
+                      placeholder="Direct URL Link"
+                    />
                   </div>
+                  {(thumbnailPreview || formData.thumbnail) && (
+                    <div className="w-full h-24 rounded-2xl overflow-hidden border border-surface-800 p-1 bg-surface-950">
+                      <img src={thumbnailPreview || formData.thumbnail} className="w-full h-full object-cover rounded-xl opacity-60" alt="" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <button type="submit" disabled={uploading} className="premium-button-primary flex-1 h-14 uppercase tracking-widest text-xs">
-                    {uploading ? 'Processing Architecture...' : editingCourse ? 'Modify Blueprint' : 'Authorize Blueprint'}
+                  <button type="submit" disabled={uploading} className="premium-button-primary flex-1 h-16 uppercase tracking-widest text-xs font-black shadow-primary-500/20 shadow-lg active:scale-95 transition-all">
+                    {uploading ? 'Processing Architecture...' : editingCourse ? 'Update Core Blueprint' : 'Authorize Core Blueprint'}
                   </button>
                 </div>
               </div>

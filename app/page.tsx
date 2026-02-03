@@ -22,9 +22,9 @@ export default function AdminLogin() {
     try {
       const response = await authAPI.login({ email, password });
 
-      // Check if user has admin role
-      if (response.user.role !== 'ADMIN') {
-        setError('Access denied. Admin privileges required.');
+      // Check if user has admin or coach role
+      if (response.user.role !== 'ADMIN' && response.user.role !== 'COACH') {
+        setError('Access denied. Administrative privileges required.');
         return;
       }
 

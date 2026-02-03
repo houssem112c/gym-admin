@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import AdminNav from '@/components/AdminNav';
-import { coursesAPI } from '@/lib/api';
+import { coursesAPI, coachAPI } from '@/lib/api';
 import { Course, CourseSchedule } from '@/types';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function SchedulesPage() {
+  const [user, setUser] = useState<any>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [schedules, setSchedules] = useState<CourseSchedule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,17 +30,63 @@ export default function SchedulesPage() {
     dayOfWeek: '',
   });
 
-  const fetchData = async () => {
+  const fetchData = async (currentUser?: any) => {
     try {
-      const coursesData = await coursesAPI.getAll();
+      const activeUser = currentUser || user;
+      if (!activeUser) return;
+
+      let coursesData;
+      if (activeUser.role === 'COACH') {
+        coursesData = await coachAPI.getMyCourses();
+      } else {
+        coursesData = await coursesAPI.getAll();
+      }
+
       setCourses(coursesData);
 
-      // Fetch all schedules for all courses
+      // Fetch all schedules for the relevant courses
       const allSchedules: CourseSchedule[] = [];
       for (const course of coursesData) {
         const courseSchedules = await coursesAPI.getSchedules(course.id);
         allSchedules.push(...courseSchedules);
       }
+
+      try {
+        // Fetch private sessions
+        const privateSessions = await import('@/lib/api').then(m => m.privateSessionsAPI.getMySessions());
+
+        // Convert private sessions to schedule format
+        const privateSessionSchedules = privateSessions
+          .filter((session: any) => session.status === 'ACCEPTED')
+          .map((session: any) => ({
+            id: session.id,
+            courseId: 'private-session', // Dummy ID
+            title: `Private Session with ${activeUser.role === 'COACH' ? session.user.name : session.coach.name}`,
+            coachName: session.coach.name,
+            startTime: session.startTime,
+            endTime: session.endTime,
+            isRecurring: false,
+            specificDate: session.date, // Assuming date is in ISO format
+            dayOfWeek: new Date(session.date).getDay(),
+            bookings: [{
+              user: session.user
+            }],
+            course: {
+              id: 'private',
+              title: 'Private 1-on-1 Session',
+              description: session.note || 'Private coaching session',
+              duration: 60, // Estimate
+              capacity: 1,
+              instructor: session.coach.name,
+            }
+          }));
+
+        allSchedules.push(...privateSessionSchedules);
+      } catch (err) {
+        console.error('Failed to fetch private sessions:', err);
+        // Don't block main schedule loading if private sessions fail
+      }
+
       setSchedules(allSchedules);
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -50,7 +97,34 @@ export default function SchedulesPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const fetchUserAndData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          window.location.href = '/';
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-admin`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          fetchData(userData);
+        } else {
+          window.location.href = '/';
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        window.location.href = '/';
+      }
+    };
+
+    fetchUserAndData();
   }, []);
 
   const getDaysInMonth = (date: Date) => {
@@ -751,6 +825,40 @@ export default function SchedulesPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Participants Section */}
+                <div className="bg-gradient-to-br from-indigo-500/20 to-purple-600/20 p-6 rounded-xl border border-indigo-400/30 mb-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-indigo-300">👥 Participants</h3>
+                    <span className="bg-indigo-500/30 text-indigo-200 px-3 py-1 rounded-full text-xs font-bold border border-indigo-400/30">
+                      {selectedSchedule.bookings?.length || 0} / {(selectedSchedule.course as any)?.capacity || '∞'}
+                    </span>
+                  </div>
+
+                  {selectedSchedule.bookings && selectedSchedule.bookings.length > 0 ? (
+                    <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                      {selectedSchedule.bookings.map((booking: any) => (
+                        <div key={booking.user.id} className="flex items-center gap-3 bg-gray-800/50 p-3 rounded-lg border border-gray-700/50 hover:border-indigo-500/30 transition-colors">
+                          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                            {booking.user.avatar ? (
+                              <img src={booking.user.avatar} alt={booking.user.name} className="w-full h-full object-cover" />
+                            ) : (
+                              booking.user.name.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white font-semibold text-sm truncate">{booking.user.name}</h4>
+                            <p className="text-gray-400 text-xs truncate">{booking.user.email}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-400 text-sm bg-gray-800/30 rounded-lg border border-gray-700/30 dashed-border">
+                      <p>No participants yet</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Quick Stats */}
                 <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-6 rounded-xl border border-blue-400/30">
